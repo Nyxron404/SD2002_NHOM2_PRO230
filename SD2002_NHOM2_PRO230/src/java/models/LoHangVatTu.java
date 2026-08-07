@@ -5,6 +5,7 @@ import java.util.Date;
 public class LoHangVatTu {
     private int id;
     private int chi_tiet_phieu_nhap_id;
+    private int vat_tu_id; // BỔ SUNG TRƯỜNG NÀY ĐỂ MAP VỚI VẬT TƯ Ở GIAO DIỆN
     private String so_lo;
     private Date ngay_san_xuat;
     private Date han_su_dung;
@@ -17,9 +18,10 @@ public class LoHangVatTu {
     public LoHangVatTu() {
     }
 
-    public LoHangVatTu(int id, int chi_tiet_phieu_nhap_id, String so_lo, Date ngay_san_xuat, Date han_su_dung, double so_luong_nhap, double so_luong_con_lai, int vi_tri_luu_tru_id, String trang_thai, Date ngay_tao) {
+    public LoHangVatTu(int id, int chi_tiet_phieu_nhap_id, int vat_tu_id, String so_lo, Date ngay_san_xuat, Date han_su_dung, double so_luong_nhap, double so_luong_con_lai, int vi_tri_luu_tru_id, String trang_thai, Date ngay_tao) {
         this.id = id;
         this.chi_tiet_phieu_nhap_id = chi_tiet_phieu_nhap_id;
+        this.vat_tu_id = vat_tu_id;
         this.so_lo = so_lo;
         this.ngay_san_xuat = ngay_san_xuat;
         this.han_su_dung = han_su_dung;
@@ -35,6 +37,8 @@ public class LoHangVatTu {
     public void setId(int id) { this.id = id; }
     public int getChi_tiet_phieu_nhap_id() { return chi_tiet_phieu_nhap_id; }
     public void setChi_tiet_phieu_nhap_id(int chi_tiet_phieu_nhap_id) { this.chi_tiet_phieu_nhap_id = chi_tiet_phieu_nhap_id; }
+    public int getVat_tu_id() { return vat_tu_id; }
+    public void setVat_tu_id(int vat_tu_id) { this.vat_tu_id = vat_tu_id; }
     public String getSo_lo() { return so_lo; }
     public void setSo_lo(String so_lo) { this.so_lo = so_lo; }
     public Date getNgay_san_xuat() { return ngay_san_xuat; }

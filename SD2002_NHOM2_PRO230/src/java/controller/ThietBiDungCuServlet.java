@@ -100,6 +100,18 @@ public class ThietBiDungCuServlet extends HttpServlet {
             } catch (Exception e) {
                 out.print("{\"success\":false,\"error\":\"" + e.getMessage().replace("\"", "\\\"").replace("\n", " ") + "\"}");
             }
+        } else if ("haoHutDungCu".equals(action)) {
+            try {
+                int id = Integer.parseInt(request.getParameter("id"));
+                double qty = Double.parseDouble(request.getParameter("qty"));
+                double chiphi = Double.parseDouble(request.getParameter("chiphi"));
+                String reason = request.getParameter("reason");
+                
+                boolean success = dungCuService.ghiNhanHaoHut(id, qty, chiphi, reason);
+                out.print("{\"success\":" + success + "}");
+            } catch (Exception e) {
+                out.print("{\"success\":false,\"error\":\"" + e.getMessage() + "\"}");
+            }
         }
     }
 

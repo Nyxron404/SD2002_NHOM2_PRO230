@@ -34,4 +34,19 @@ public class DungCuDAO {
         }
         return list;
     }
+    
+    // Thêm hàm này để trừ số lượng tồn kho dụng cụ khi báo hao hụt
+    public boolean updateHaoHut(int id, double soLuongMat, double chiPhiThietHai, String lyDo) {
+        String sql = "UPDATE DungCu SET ton_kho_hien_tai = ton_kho_hien_tai - ?, ngay_cap_nhat = GETDATE() WHERE id = ?";
+        
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, soLuongMat);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

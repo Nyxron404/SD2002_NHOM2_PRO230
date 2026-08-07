@@ -10,4 +10,9 @@ public class DungCuService {
     public List<DungCu> getAllDungCu() { 
         return dungCuDAO.getAll(); 
     }
+
+    // Cập nhật hàm này
+    public boolean ghiNhanHaoHut(int id, double soLuongMat, double chiPhiThietHai, String lyDo) {
+        return dungCuDAO.updateHaoHut(id, soLuongMat, chiPhiThietHai, lyDo);
+    }
 }

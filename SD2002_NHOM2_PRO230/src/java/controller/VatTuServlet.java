@@ -8,19 +8,24 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import models.VatTu;
 import models.DonViQuanLy;
+import models.NhaCungCap;
+import models.LoHangVatTu;
+
 import service.VatTuService;
 import dao.DonViQuanLyDAO;
 import dao.NhaCungCapDAO;
-import models.NhaCungCap;
+import dao.LoHangVatTuDAO;
 
 @WebServlet(name = "VatTuServlet", urlPatterns = {"/vattu"})
 public class VatTuServlet extends HttpServlet {
     
     private VatTuService vatTuService = new VatTuService();
-    private DonViQuanLyDAO donViDAO = new DonViQuanLyDAO(); // Khởi tạo DAO Đơn vị
-    private NhaCungCapDAO nccDAO = new NhaCungCapDAO(); // Khởi tạo DAO Nhà cung cấp
+    private DonViQuanLyDAO donViDAO = new DonViQuanLyDAO();
+    private NhaCungCapDAO nccDAO = new NhaCungCapDAO();
+    private LoHangVatTuDAO loHangDAO = new LoHangVatTuDAO(); // Khởi tạo DAO Lô Hàng
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -29,17 +34,18 @@ public class VatTuServlet extends HttpServlet {
         response.setContentType("text/html; charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
         
-        // 1. Lấy danh sách Vật Tư
         List<VatTu> listVatTu = vatTuService.getAllVatTu();
         request.setAttribute("listVatTu", listVatTu);
         
-        // 2. Lấy danh sách Đơn Vị Quản Lý (Kho) đẩy sang JSP
         List<DonViQuanLy> listDonVi = donViDAO.getAll();
         request.setAttribute("listDonVi", listDonVi);
         
-        // 3. Lấy danh sách Nhà cung cấp đẩy sang JSP
         List<NhaCungCap> listNCC = nccDAO.getAll();
         request.setAttribute("listNCC", listNCC);
+        
+        // Lấy danh sách lô hàng đẩy sang JSP
+        List<LoHangVatTu> listLoHang = loHangDAO.getAllWithVatTuId();
+        request.setAttribute("listLoHang", listLoHang);
         
         request.getRequestDispatcher("./views/vatTu/vatTu.jsp").forward(request, response);
     }
