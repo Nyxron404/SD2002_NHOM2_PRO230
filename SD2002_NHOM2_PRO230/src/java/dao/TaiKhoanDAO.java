@@ -19,7 +19,7 @@ public class TaiKhoanDAO {
             + "nd.ngay_tao AS nd_ngay_tao, nd.ngay_cap_nhat AS nd_ngay_cap_nhat, vt.ten_vai_tro "
             + "FROM TaiKhoan tk "
             + "JOIN NguoiDung nd ON tk.nguoi_dung_id = nd.id "
-            + "JOIN VaiTro vt ON tk.vai_tro_id = vt.id ";
+            + "LEFT JOIN VaiTro vt ON tk.vai_tro_id = vt.id ";
 
     private TaiKhoan mapRow(ResultSet rs) throws SQLException {
         TaiKhoan tk = new TaiKhoan(

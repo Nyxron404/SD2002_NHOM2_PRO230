@@ -46,6 +46,15 @@ public class AuthService {
             return new KetQua(false, "Tài khoản đã bị khóa hoặc không còn hiệu lực."); // 5c
         }
 
+        // Kiểm tra vai trò: phải đã được gán vai trò và vai trò phải là Admin mới cho vào hệ thống.
+        String vaiTro = tk.getTen_vai_tro();
+        if (vaiTro == null || vaiTro.trim().isEmpty()) {
+            return new KetQua(false, "Tài khoản chưa được gán vai trò. Vui lòng liên hệ quản trị viên.");
+        }
+        if (!"Admin".equalsIgnoreCase(vaiTro.trim())) {
+            return new KetQua(false, "Tài khoản không có quyền truy cập hệ thống.");
+        }
+
         taiKhoanDAO.capNhatLanDangNhapCuoi(tk.getId());
         KetQua kq = new KetQua(true, "Đăng nhập thành công.");
         kq.taiKhoan = tk;

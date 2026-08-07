@@ -67,7 +67,7 @@
             .input-icon i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8aa3c0; }
             .input-icon input {
                 width: 100%;
-                padding: 12px 14px 12px 42px;
+                padding: 12px 42px 12px 42px;
                 border: 1px solid #d0d8e3;
                 border-radius: 10px;
                 font-size: 15px;
@@ -75,7 +75,8 @@
                 transition: border 0.2s;
             }
             .input-icon input:focus { border-color: #4d90fe; outline: none; background: #fff; }
-            .toggle-pass { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #8aa3c0; cursor: pointer; left: auto; }
+            /* Selector đủ đặc trưng để thắng ".input-icon i", tránh 2 icon đè lên nhau */
+            .input-icon i.toggle-pass { left: auto; right: 14px; cursor: pointer; }
             .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; font-size: 14px; }
             .row-between a { color: #4d90fe; text-decoration: none; }
             .row-between a:hover { text-decoration: underline; }

@@ -21,10 +21,10 @@ import jakarta.mail.internet.MimeMessage;
  */
 public class EmailUtil {
 
-    // ==== CẤU HÌNH TÀI KHOẢN GỬI (điền thông tin thật để gửi email được) ====
-    private static final String SENDER_EMAIL = "";          // vd: quantri.trangtrai@gmail.com
-    private static final String SENDER_APP_PASSWORD = "";   // App Password 16 ký tự của Gmail
-    private static final String SENDER_NAME = "Trang Trại Sầu Riêng";
+    // ==== CẤU HÌNH TÀI KHOẢN GỬI ====
+    private static final String SENDER_EMAIL = "smartfarmmanage@gmail.com";
+    private static final String SENDER_APP_PASSWORD = "grxhduafxftczxjm"; // App Password Gmail
+    private static final String SENDER_NAME = "Smart Farm";
 
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
@@ -83,30 +83,31 @@ public class EmailUtil {
 
     /** Email gửi thông tin đăng nhập khi tạo tài khoản mới (UC-1.1). */
     public static void guiThongTinDangNhap(String toEmail, String hoTen, String tenDangNhap, String matKhau) {
-        String subject = "[Trang Trại Sầu Riêng] Thông tin tài khoản đăng nhập";
-        String body = "<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e9edf4;border-radius:12px;overflow:hidden'>"
-                + "<div style='background:#1e2a3a;color:#fff;padding:20px 24px'><h2 style='margin:0'>🌱 Trang Trại Sầu Riêng</h2></div>"
-                + "<div style='padding:24px;color:#333'>"
-                + "<p>Xin chào <b>" + safe(hoTen) + "</b>,</p>"
-                + "<p>Tài khoản của bạn đã được khởi tạo trên hệ thống quản lý trang trại. Thông tin đăng nhập:</p>"
-                + "<table style='width:100%;border-collapse:collapse;margin:16px 0'>"
-                + "<tr><td style='padding:10px;background:#f5f7fa;border:1px solid #e9edf4'>Tên đăng nhập</td>"
-                + "<td style='padding:10px;border:1px solid #e9edf4'><b>" + safe(tenDangNhap) + "</b></td></tr>"
-                + "<tr><td style='padding:10px;background:#f5f7fa;border:1px solid #e9edf4'>Mật khẩu mặc định</td>"
-                + "<td style='padding:10px;border:1px solid #e9edf4'><b>" + safe(matKhau) + "</b></td></tr>"
-                + "</table>"
-                + "<p style='color:#e74c3c'><b>Lưu ý:</b> Vui lòng đổi mật khẩu ngay trong lần đăng nhập đầu tiên để bảo mật.</p>"
+        String subject = "THÔNG TIN TÀI KHOẢN SMART FARM";
+        String body = "<div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                + "<h2 style='color: #2e7d32;'>Chào mừng bạn gia nhập Smart Farm!</h2>"
+                + "<p>Chào <b>" + safe(hoTen) + "</b>, tài khoản làm việc của bạn trên hệ thống đã được thiết lập thành công.</p>"
+                + "<div style='background-color: #f9f9f9; padding: 15px; border-left: 5px solid #2e7d32; border-radius: 5px;'>"
+                + "<strong>Tên đăng nhập:</strong> <span style='color: #d35400; font-size: 18px;'>" + safe(tenDangNhap) + "</span><br>"
+                + "<strong>Mật khẩu:</strong> <span style='color: #d35400; font-size: 18px;'>" + safe(matKhau) + "</span>"
                 + "</div>"
-                + "<div style='background:#f5f7fa;color:#8aa3c0;padding:14px 24px;font-size:12px'>Email tự động, vui lòng không trả lời.</div>"
+                + "<p>Vui lòng đăng nhập và <b>đổi mật khẩu ngay</b> trong lần đầu tiên sử dụng.</p>"
+                + "<p style='color: #c0392b;'><strong>⚠️ Lưu ý bảo mật:</strong> Tuyệt đối không chia sẻ mật khẩu này với bất kỳ ai để đảm bảo an toàn cho tài khoản cá nhân của bạn.</p>"
+                + "<hr style='border: 0; border-top: 1px solid #eee;'>"
+                + "<p>Nếu bạn cần hỗ trợ, vui lòng liên hệ bộ phận Kỹ thuật qua email: "
+                + "<a href='mailto:longdazng@gmail.com'>longdazng@gmail.com</a> hoặc "
+                + "<a href='mailto:linhhqth08598@gmail.com'>linhhqth08598@gmail.com</a>.</p>"
+                + "<p style='font-size: 12px; color: #777;'><i>Lưu ý: Đây là email tự động, vui lòng không phản hồi thư này.</i></p>"
+                + "<p>Trân trọng,<br><b>Ban Quản Trị Smart Farm</b></p>"
                 + "</div>";
         send(toEmail, subject, body);
     }
 
     /** Email gửi lại tên đăng nhập mới khi cập nhật họ tên (UC-1.2). */
     public static void guiTenDangNhapMoi(String toEmail, String hoTen, String tenDangNhapMoi) {
-        String subject = "[Trang Trại Sầu Riêng] Cập nhật tên đăng nhập";
+        String subject = "[Smart Farm] Cập nhật tên đăng nhập";
         String body = "<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e9edf4;border-radius:12px;overflow:hidden'>"
-                + "<div style='background:#1e2a3a;color:#fff;padding:20px 24px'><h2 style='margin:0'>🌱 Trang Trại Sầu Riêng</h2></div>"
+                + "<div style='background:#2e7d32;color:#fff;padding:20px 24px'><h2 style='margin:0'>🌱 Smart Farm</h2></div>"
                 + "<div style='padding:24px;color:#333'>"
                 + "<p>Xin chào <b>" + safe(hoTen) + "</b>,</p>"
                 + "<p>Tên đăng nhập của bạn đã được cập nhật lại. Tên đăng nhập mới là:</p>"
@@ -120,9 +121,9 @@ public class EmailUtil {
 
     /** Email gửi mã xác thực để đặt lại mật khẩu (UC-0.1 luồng 3a). */
     public static void guiMaXacThuc(String toEmail, String hoTen, String maXacThuc, int soPhutHieuLuc) {
-        String subject = "[Trang Trại Sầu Riêng] Mã xác thực đặt lại mật khẩu";
+        String subject = "[Smart Farm] Mã xác thực đặt lại mật khẩu";
         String body = "<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e9edf4;border-radius:12px;overflow:hidden'>"
-                + "<div style='background:#1e2a3a;color:#fff;padding:20px 24px'><h2 style='margin:0'>🌱 Trang Trại Sầu Riêng</h2></div>"
+                + "<div style='background:#2e7d32;color:#fff;padding:20px 24px'><h2 style='margin:0'>🌱 Smart Farm</h2></div>"
                 + "<div style='padding:24px;color:#333'>"
                 + "<p>Xin chào <b>" + safe(hoTen) + "</b>,</p>"
                 + "<p>Bạn (hoặc ai đó) đã yêu cầu đặt lại mật khẩu. Mã xác thực của bạn là:</p>"
