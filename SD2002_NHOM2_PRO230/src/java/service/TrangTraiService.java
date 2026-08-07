@@ -18,6 +18,30 @@ public class TrangTraiService {
 
     public static final String[] LOAI_KHU_VUC_HOP_LE = {"Khu trồng", "Khu kho", "Khu thiết bị", "Khu thu hoạch", "Khác"};
     public static final String[] TRANG_THAI_TRANG_TRAI_HOP_LE = {"Đang hoạt động", "Tạm ngừng hoạt động"};
+    // Trạng thái đơn vị quản lý phản ánh mức độ sử dụng để dễ theo dõi (còn trống -> đầy) và trạng thái vận hành.
+    public static final String[] TRANG_THAI_DON_VI_HOP_LE = {"Còn trống", "Đang sử dụng", "Gần đầy", "Đầy", "Bảo trì", "Ngừng sử dụng"};
+
+    // Loại đơn vị quản lý được suy ra tự động theo loại khu vực (không cho người dùng chọn lại):
+    //   Khu trồng   -> Lô đất
+    //   Khu kho     -> Kệ
+    //   Khu thiết bị-> Bãi
+    //   Khu thu hoạch-> Ô chứa
+    //   Khác        -> Khác
+    public static String loaiDonViTheoKhuVuc(String loaiKhuVuc) {
+        if (loaiKhuVuc == null) return "Khác";
+        switch (loaiKhuVuc) {
+            case "Khu trồng":    return "Lô đất";
+            case "Khu kho":      return "Kệ";
+            case "Khu thiết bị": return "Bãi";
+            case "Khu thu hoạch":return "Ô chứa";
+            default:             return "Khác";
+        }
+    }
+
+    private boolean trangThaiDonViHopLe(String trangThai) {
+        for (String t : TRANG_THAI_DON_VI_HOP_LE) if (t.equals(trangThai)) return true;
+        return false;
+    }
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^0\\d{9}$");
@@ -175,6 +199,32 @@ public class TrangTraiService {
         if (kv == null) {
             return "Khu vực không tồn tại.";
         }
+
+        // Loại đơn vị được xác định tự động theo loại khu vực -> không phụ thuộc vào giá trị người dùng gửi lên.
+        String loaiDonVi = loaiDonViTheoKhuVuc(kv.getLoai_khu_vuc());
+        dv.setLoai_don_vi(loaiDonVi);
+        boolean laKe = "Kệ".equals(loaiDonVi);
+
+        // Sức chứa & số tầng chỉ áp dụng cho Kệ (khu kho); các loại đơn vị khác không lưu 2 thông tin này.
+        if (laKe) {
+            if (dv.getSuc_chua() < 0) {
+                return "Sức chứa không được âm.";
+            }
+            if (dv.getSo_tang() != null && dv.getSo_tang() < 1) {
+                return "Số tầng phải lớn hơn hoặc bằng 1.";
+            }
+        } else {
+            dv.setSuc_chua(0);
+            dv.setSo_tang(null);
+        }
+
+        // Trạng thái phải nằm trong danh sách hợp lệ; mặc định "Còn trống".
+        if (dv.getTrang_thai() == null || dv.getTrang_thai().trim().isEmpty()) {
+            dv.setTrang_thai("Còn trống");
+        } else if (!trangThaiDonViHopLe(dv.getTrang_thai())) {
+            return "Trạng thái đơn vị không hợp lệ.";
+        }
+
         int excludeId = isUpdate ? dv.getId() : -1;
         double tongDaPhanChia = donViDAO.getTongDienTichByKhuVuc(dv.getKhu_vuc_id(), excludeId);
         double conLai = kv.getDien_tich_khai_thac() - tongDaPhanChia;

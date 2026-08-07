@@ -125,6 +125,20 @@ public class DonViQuanLyDAO {
         }
     }
 
+    // Danh sách "Lô đất" phục vụ module canh tác (UC-4). Kèm diện tích để tính mật độ.
+    public List<DonViQuanLy> getLoDat() {
+        List<DonViQuanLy> list = new ArrayList<>();
+        String sql = "SELECT * FROM DonViQuanLy WHERE loai_don_vi LIKE N'%Lô%' ORDER BY id ASC";
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapRow(rs));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public boolean delete(int id) {
         String sql = "DELETE FROM DonViQuanLy WHERE id = ?";
         try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {

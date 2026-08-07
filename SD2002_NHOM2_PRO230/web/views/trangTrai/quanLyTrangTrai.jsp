@@ -79,6 +79,12 @@
             .badge-status.inuse { background: #fdebd0; color: #a04000; }
             .badge-status.maintenance { background: #fadbd8; color: #922b21; }
             .badge-status.neutral { background: #e6f0ff; color: #2f6fd6; }
+            /* Trạng thái đơn vị theo mức độ sử dụng */
+            .badge-status.empty { background: #d5f5e3; color: #1e8449; }
+            .badge-status.using { background: #e6f0ff; color: #2f6fd6; }
+            .badge-status.nearfull { background: #fef5e6; color: #b9770e; }
+            .badge-status.full { background: #fdebd0; color: #a04000; }
+            .badge-status.stopped { background: #eceff3; color: #5b6b7d; }
 
             /* MODALS */
             .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
@@ -115,8 +121,11 @@
             .info-row .info-value { font-size: 15px; color: #1e2a3a; font-weight: 500; }
             .info-row.full { grid-column: 1 / -1; }
             .info-row .info-value.muted { color: #a9b8c9; font-weight: 400; font-style: italic; }
-            .map-image { width: 100%; max-height: 320px; object-fit: cover; border-radius: 10px; border: 1px solid #e9edf4; margin-top: 8px; }
+            /* Ảnh bản đồ: khung vuông, hiển thị trọn ảnh (không cắt) nhờ object-fit: contain */
+            .map-image { width: 100%; max-width: 460px; aspect-ratio: 1 / 1; object-fit: contain; background: #f4f7fb; border-radius: 10px; border: 1px solid #e9edf4; margin-top: 8px; display: block; }
             .gps-map-mini { height: 200px; border-radius: 10px; margin-top: 8px; }
+            /* Bản đồ toạ độ GPS (chế độ xem): khung vuông cho cân đối, đủ rộng để thấy toàn cảnh */
+            #viewGpsMap.gps-map-mini { width: 100%; max-width: 460px; height: auto; aspect-ratio: 1 / 1; }
 
             /* KHU VỰC - GRID CARD */
             .zone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
@@ -560,6 +569,7 @@
                                 <th>Loại</th>
                                 <th>Diện tích (m²)</th>
                                 <th>Sức chứa</th>
+                                <th>Số tầng</th>
                                 <th>Trạng thái</th>
                                 <th style="text-align:center;">Thao tác</th>
                             </tr>
@@ -587,37 +597,44 @@
                             <input type="text" id="dvMa" placeholder="VD: LO-01">
                         </div>
                         <div class="form-group">
-                            <label>Loại đơn vị <span style="color:#e74c3c;">*</span></label>
-                            <select id="dvLoai" required>
-                                <option value="Lô đất">Lô đất</option>
-                                <option value="Kệ">Kệ</option>
-                                <option value="Vị trí lưu trữ">Vị trí lưu trữ</option>
-                                <option value="Khác">Khác</option>
-                            </select>
+                            <label>Loại đơn vị</label>
+                            <input type="text" id="dvLoai" readonly>
+                            <div class="form-hint">Tự động theo loại khu vực, không cần chọn.</div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Tên đơn vị <span style="color:#e74c3c;">*</span></label>
                         <input type="text" id="dvTen" required placeholder="VD: Lô A1">
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Diện tích (m²) <span style="color:#e74c3c;">*</span></label>
-                            <input type="number" id="dvDienTich" step="0.01" min="0.01" required>
-                            <div class="form-hint" id="dvDienTichHint">Không được vượt diện tích khai thác còn lại của khu vực.</div>
-                        </div>
+                    <div class="form-group">
+                        <label>Diện tích (m²) <span style="color:#e74c3c;">*</span></label>
+                        <input type="number" id="dvDienTich" step="0.01" min="0.01" required>
+                        <div class="form-hint" id="dvDienTichHint">Không được vượt diện tích khai thác còn lại của khu vực.</div>
+                    </div>
+                    <!-- Sức chứa & số tầng chỉ hiển thị khi đơn vị là Kệ (khu kho) -->
+                    <div class="form-row" id="dvKeFields" style="display:none;">
                         <div class="form-group">
                             <label>Sức chứa</label>
-                            <input type="number" id="dvSucChua" step="0.01" min="0" placeholder="Áp dụng cho kệ / vị trí lưu trữ">
+                            <input type="number" id="dvSucChua" step="0.01" min="0" placeholder="VD: 500 (kg/thùng...)">
+                            <div class="form-hint">Khối lượng / số lượng tối đa kệ có thể chứa.</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Số tầng</label>
+                            <input type="number" id="dvSoTang" step="1" min="1" placeholder="VD: 4">
+                            <div class="form-hint">Số tầng của kệ lưu trữ.</div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Trạng thái</label>
                         <select id="dvTrangThai">
-                            <option value="Đang hoạt động">Đang hoạt động</option>
-                            <option value="Ngừng sử dụng">Ngừng sử dụng</option>
+                            <option value="Còn trống">Còn trống</option>
+                            <option value="Đang sử dụng">Đang sử dụng</option>
+                            <option value="Gần đầy">Gần đầy</option>
+                            <option value="Đầy">Đầy</option>
                             <option value="Bảo trì">Bảo trì</option>
+                            <option value="Ngừng sử dụng">Ngừng sử dụng</option>
                         </select>
+                        <div class="form-hint">Chọn đúng mức độ sử dụng (gần đầy / đầy) để dễ theo dõi sức chứa còn lại.</div>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-outline" onclick="closeModal('modalDonVi')">Hủy</button>
@@ -661,6 +678,7 @@
                     tenDonVi: "${fn:escapeXml(dv.getTen_don_vi())}",
                     dienTich: ${dv.getDien_tich()},
                     sucChua: ${dv.getSuc_chua()},
+                    soTang: ${empty dv.so_tang ? 'null' : dv.so_tang},
                     trangThai: "${fn:escapeXml(dv.getTrang_thai())}"
                 }${!loop.last ? ',' : ''}
             </c:forEach>
@@ -681,6 +699,40 @@
 
             function dienTichDaPhanChiaKhuVuc(khuVucId) {
                 return donViList.filter(d => d.khuVucId === khuVucId).reduce((s, d) => s + d.dienTich, 0);
+            }
+
+            // Loại đơn vị suy ra tự động theo loại khu vực (đồng bộ với TrangTraiService.loaiDonViTheoKhuVuc)
+            function loaiDonViTheoKhuVuc(loaiKhuVuc) {
+                switch (loaiKhuVuc) {
+                    case 'Khu trồng':     return 'Lô đất';
+                    case 'Khu kho':       return 'Kệ';
+                    case 'Khu thiết bị':  return 'Bãi';
+                    case 'Khu thu hoạch': return 'Ô chứa';
+                    default:              return 'Khác';
+                }
+            }
+
+            // Màu badge trạng thái đơn vị theo mức độ sử dụng
+            function donViStatusClass(trangThai) {
+                switch (trangThai) {
+                    case 'Còn trống':     return 'empty';
+                    case 'Đang sử dụng':  return 'using';
+                    case 'Gần đầy':       return 'nearfull';
+                    case 'Đầy':           return 'full';
+                    case 'Bảo trì':       return 'maintenance';
+                    case 'Ngừng sử dụng': return 'stopped';
+                    default:              return 'neutral';
+                }
+            }
+
+            // Ẩn/hiện các trường chỉ dành cho Kệ (sức chứa, số tầng)
+            function capNhatHienThiTruongKe(loaiDonVi) {
+                const laKe = loaiDonVi === 'Kệ';
+                document.getElementById('dvKeFields').style.display = laKe ? 'flex' : 'none';
+                if (!laKe) {
+                    document.getElementById('dvSucChua').value = '';
+                    document.getElementById('dvSoTang').value = '';
+                }
             }
 
             // ===== DASHBOARD TỔNG QUAN (chỉ hiển thị, không phải nghiệp vụ) =====
@@ -922,7 +974,7 @@
 
                 const icon = zoneIconInfo(kv.loaiKhuVuc);
                 document.getElementById('ctKhuVucTitle').innerHTML = '<i class="fas ' + icon.icon + '" style="color:#4d90fe;"></i> ' + kv.tenKhuVuc + ' <span style="font-size:13px; color:#8aa3c0; font-weight:400;">(' + kv.loaiKhuVuc + ')</span>';
-                document.getElementById('ctDonViHeading').innerHTML = '<i class="fas fa-list"></i> Danh sách đơn vị quản lý' + (kv.loaiKhuVuc === 'Khu trồng' ? ' (Lô đất)' : ' (Kệ / Vị trí lưu trữ)');
+                document.getElementById('ctDonViHeading').innerHTML = '<i class="fas fa-list"></i> Danh sách đơn vị quản lý (' + loaiDonViTheoKhuVuc(kv.loaiKhuVuc) + ')';
 
                 renderChiTietKhuVuc();
                 document.getElementById('modalChiTietKhuVuc').classList.add('active');
@@ -942,22 +994,22 @@
                 const list = donViList.filter(d => d.khuVucId === kv.id);
 
                 if (list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#8aa3c0; padding: 30px;">Chưa có đơn vị nào trong khu vực này.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8aa3c0; padding: 30px;">Chưa có đơn vị nào trong khu vực này.</td></tr>';
                     return;
                 }
 
                 let html = '';
                 list.forEach(function (dv) {
-                    let statusClass = 'available';
-                    if (dv.trangThai === 'Bảo trì') statusClass = 'maintenance';
-                    else if (dv.trangThai === 'Ngừng sử dụng') statusClass = 'inuse';
+                    const statusClass = donViStatusClass(dv.trangThai);
+                    const laKe = dv.loaiDonVi === 'Kệ';
 
                     html += '<tr>';
                     html += '<td><span style="color:#6f8fb0; font-size:13px;">' + (dv.maDonVi || '-') + '</span></td>';
                     html += '<td><strong style="color:#2c3e50;">' + dv.tenDonVi + '</strong></td>';
                     html += '<td><span class="badge-status neutral">' + dv.loaiDonVi + '</span></td>';
                     html += '<td>' + dv.dienTich.toLocaleString() + '</td>';
-                    html += '<td>' + (dv.sucChua ? dv.sucChua.toLocaleString() : '-') + '</td>';
+                    html += '<td>' + (laKe && dv.sucChua ? dv.sucChua.toLocaleString() : '-') + '</td>';
+                    html += '<td>' + (laKe && dv.soTang != null ? dv.soTang : '-') + '</td>';
                     html += '<td><span class="badge-status ' + statusClass + '">' + dv.trangThai + '</span></td>';
                     html += '<td><div class="actions-cell">';
                     html += '<button class="btn-icon" title="Sửa" onclick="openDonViModal(' + dv.id + ')"><i class="fas fa-pen"></i></button>';
@@ -978,21 +1030,26 @@
                 const conLai = kv ? (kv.dienTichKhaiThac - daPhanChiaKhac) : 0;
                 document.getElementById('dvDienTichHint').textContent = 'Diện tích khai thác còn trống trong khu vực: ' + conLai.toLocaleString() + ' m²';
 
+                // Loại đơn vị luôn suy ra tự động theo loại khu vực (không cho chọn lại)
+                const loaiDonVi = kv ? loaiDonViTheoKhuVuc(kv.loaiKhuVuc) : 'Khác';
+                document.getElementById('dvLoai').value = loaiDonVi;
+                capNhatHienThiTruongKe(loaiDonVi);
+
                 if (id) {
                     const dv = donViList.find(d => d.id === id);
                     document.getElementById('modalDonViTitle').innerHTML = '<i class="fas fa-pen" style="color:#6fcf97;"></i> Sửa Đơn Vị Quản Lý';
                     document.getElementById('dvId').value = dv.id;
                     document.getElementById('dvMa').value = dv.maDonVi;
-                    document.getElementById('dvLoai').value = dv.loaiDonVi;
                     document.getElementById('dvTen').value = dv.tenDonVi;
                     document.getElementById('dvDienTich').value = dv.dienTich;
-                    document.getElementById('dvSucChua').value = dv.sucChua;
+                    if (loaiDonVi === 'Kệ') {
+                        document.getElementById('dvSucChua').value = dv.sucChua || '';
+                        document.getElementById('dvSoTang').value = (dv.soTang != null ? dv.soTang : '');
+                    }
                     document.getElementById('dvTrangThai').value = dv.trangThai;
                 } else {
                     document.getElementById('modalDonViTitle').innerHTML = '<i class="fas fa-box" style="color:#6fcf97;"></i> Thêm Đơn Vị Quản Lý';
                     document.getElementById('dvId').value = '';
-                    if (kv && kv.loaiKhuVuc !== 'Khu trồng') document.getElementById('dvLoai').value = 'Kệ';
-                    else document.getElementById('dvLoai').value = 'Lô đất';
                 }
                 document.getElementById('modalDonVi').classList.add('active');
             }
@@ -1012,6 +1069,7 @@
                 params.append('ten_don_vi', document.getElementById('dvTen').value.trim());
                 params.append('dien_tich', document.getElementById('dvDienTich').value);
                 params.append('suc_chua', document.getElementById('dvSucChua').value || '0');
+                params.append('so_tang', document.getElementById('dvSoTang').value || '');
                 params.append('trang_thai', document.getElementById('dvTrangThai').value);
 
                 fetch(contextPath + '/trangtrai', {

@@ -115,7 +115,9 @@ public class TrangTraiServlet extends HttpServlet {
                     dv.setDien_tich(Double.parseDouble(request.getParameter("dien_tich")));
                     String sucChua = request.getParameter("suc_chua");
                     dv.setSuc_chua(sucChua == null || sucChua.isEmpty() ? 0 : Double.parseDouble(sucChua));
-                    dv.setTrang_thai(request.getParameter("trang_thai") != null ? request.getParameter("trang_thai") : "Đang hoạt động");
+                    String soTang = request.getParameter("so_tang");
+                    dv.setSo_tang(soTang == null || soTang.trim().isEmpty() ? null : Integer.parseInt(soTang.trim()));
+                    dv.setTrang_thai(request.getParameter("trang_thai") != null ? request.getParameter("trang_thai") : "Còn trống");
                     String loi = service.luuDonVi(dv, isUpdate);
                     writeResult(out, loi);
                     break;
