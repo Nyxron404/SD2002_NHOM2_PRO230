@@ -41,7 +41,7 @@ public class TaiKhoanDAO {
                 rs.getString("so_dien_thoai"),
                 rs.getDate("ngay_sinh"),
                 rs.getBoolean("gioi_tinh"),
-                rs.getNString("dia_chi"),
+                rs.getString("dia_chi"),
                 rs.getTimestamp("nd_ngay_tao"),
                 rs.getTimestamp("nd_ngay_cap_nhat")
         );
