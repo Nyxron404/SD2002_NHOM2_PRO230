@@ -37,11 +37,11 @@
             <!-- UC-2 -->
             <li><a href="${pageContext.request.contextPath}/views/trangTrai/quanLyTrangTrai.jsp"><i class="fas fa-map-marked-alt"></i> <span>Quản lý trang trại, khu vực</span></a></li>
             <!-- UC-3 -->
-            <li><a href="${pageContext.request.contextPath}/views/vatTu/vatTu.jsp"><i class="fas fa-boxes"></i> <span>Quản lý vật tư nông nghiệp</span></a></li>
+            <li><a href="${pageContext.request.contextPath}/vattu"><i class="fas fa-boxes"></i> <span>Quản lý vật tư nông nghiệp</span></a></li>
             <!-- UC-4 -->
             <li><a href="${pageContext.request.contextPath}/views/canhTac/canhTac.jsp"><i class="fas fa-seedling"></i> <span>Quản lý canh tác sầu riêng</span></a></li>
             <!-- UC-5 -->
-            <li><a href="${pageContext.request.contextPath}/views/thietBivaDungCu/thietBivaDungCu.jsp"><i class="fas fa-tractor"></i> <span>Quản lý dụng cụ, thiết bị</span></a></li>
+            <li><a href="${pageContext.request.contextPath}/tbdc"><i class="fas fa-tractor"></i> <span>Quản lý dụng cụ, thiết bị</span></a></li>
             <!-- UC-6 -->
             <li><a href="${pageContext.request.contextPath}/views/baoCao/baoCao.jsp"><i class="fas fa-chart-pie"></i> <span>Báo cáo và thống kê</span></a></li>
         </ul>
