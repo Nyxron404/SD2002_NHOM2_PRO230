@@ -50,7 +50,7 @@ public class TaiKhoanService {
         TaiKhoan tk = new TaiKhoan();
         tk.setVai_tro_id(vaiTroDAO.getAdminId()); // hiện tại chỉ có vai trò Admin
         tk.setTen_dang_nhap(username);
-        tk.setMat_khau(PasswordUtil.hash(matKhauTho));
+        tk.setMat_khau(matKhauTho);
         tk.setTrang_thai(true);        // hoạt động
         tk.setPhai_doi_mat_khau(true); // buộc đổi mật khẩu lần đầu
 

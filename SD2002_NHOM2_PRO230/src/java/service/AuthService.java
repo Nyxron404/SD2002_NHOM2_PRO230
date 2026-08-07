@@ -108,7 +108,7 @@ public class AuthService {
         if (!check.thanhCong) return check;
 
         // Xác nhận lại mã còn hợp lệ và đúng bản ghi
-        boolean ok = taiKhoanDAO.capNhatMatKhau(taiKhoanId, PasswordUtil.hash(matKhauMoi));
+        boolean ok = taiKhoanDAO.capNhatMatKhau(taiKhoanId, matKhauMoi);
         if (!ok) {
             return new KetQua(false, "Không cập nhật được mật khẩu, vui lòng thử lại.");
         }
@@ -131,7 +131,7 @@ public class AuthService {
             return new KetQua(false, "Mật khẩu mới phải khác mật khẩu hiện tại.");
         }
 
-        boolean ok = taiKhoanDAO.capNhatMatKhau(taiKhoanId, PasswordUtil.hash(matKhauMoi));
+        boolean ok = taiKhoanDAO.capNhatMatKhau(taiKhoanId, matKhauMoi);
         if (!ok) {
             return new KetQua(false, "Không cập nhật được mật khẩu, vui lòng thử lại.");
         }

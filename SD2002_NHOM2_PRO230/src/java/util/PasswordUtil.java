@@ -1,14 +1,12 @@
 package util;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 
 /**
  * Tiện ích xử lý mật khẩu và sinh tên đăng nhập.
- *  - Mật khẩu được băm bằng SHA-256 trước khi lưu vào CSDL (không lưu mật khẩu thô).
+ *  - Mật khẩu được lưu/so sánh trực tiếp (plaintext) đúng theo cách dữ liệu đang lưu trong CSDL.
  *  - Sinh mật khẩu mặc định 8 chữ số ngẫu nhiên (theo đặc tả UC-1.1).
  *  - Sinh tên đăng nhập từ họ tên (bỏ dấu tiếng Việt).
  */
@@ -16,27 +14,10 @@ public class PasswordUtil {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    /** Băm mật khẩu bằng SHA-256, trả về chuỗi hex thường. */
-    public static String hash(String matKhautho) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = md.digest(matKhautho.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : bytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /** So khớp mật khẩu thô người dùng nhập với chuỗi băm lưu trong DB. */
-    public static boolean matches(String matKhautho, String hashLuuTru) {
-        if (matKhautho == null || hashLuuTru == null) return false;
-        String h = hash(matKhautho);
-        return h != null && h.equalsIgnoreCase(hashLuuTru);
+    /** So khớp mật khẩu người dùng nhập với mật khẩu lưu trong DB (so sánh trực tiếp). */
+    public static boolean matches(String matKhauNhap, String matKhauLuuTru) {
+        if (matKhauNhap == null || matKhauLuuTru == null) return false;
+        return matKhauNhap.equals(matKhauLuuTru);
     }
 
     /** Sinh mật khẩu mặc định gồm 8 chữ số (UC-1.1 bước 8). */
