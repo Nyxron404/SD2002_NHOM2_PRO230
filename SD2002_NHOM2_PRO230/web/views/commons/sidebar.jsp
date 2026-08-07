@@ -35,7 +35,7 @@
             <!-- UC-1 -->
             <li><a href="${pageContext.request.contextPath}/taikhoan"><i class="fas fa-user-shield"></i> <span>Quản lý tài khoản</span></a></li>
             <!-- UC-2 -->
-            <li><a href="${pageContext.request.contextPath}/views/trangTrai/quanLyTrangTrai.jsp"><i class="fas fa-map-marked-alt"></i> <span>Quản lý trang trại, khu vực</span></a></li>
+            <li><a href="${pageContext.request.contextPath}/trangtrai"><i class="fas fa-map-marked-alt"></i> <span>Quản lý trang trại, khu vực</span></a></li>
             <!-- UC-3 -->
             <li><a href="${pageContext.request.contextPath}/vattu"><i class="fas fa-boxes"></i> <span>Quản lý vật tư nông nghiệp</span></a></li>
             <!-- UC-4 -->
