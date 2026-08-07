@@ -27,12 +27,24 @@
             <i class="fas fa-bell"></i>
             <span class="badge">3</span>
         </div>
-        <div class="user-info">
-            <div class="avatar">ĐL</div>
+        <div class="user-info" onclick="window.location.href='${pageContext.request.contextPath}/logout'" title="Đăng xuất">
+            <div class="avatar" id="headerAvatar" data-name="${sessionScope.hoTen}">U</div>
             <div>
-                <div class="user-name">Đặng Thành Long</div>
-                <div class="user-role">Quản trị viên</div>
+                <div class="user-name">${sessionScope.hoTen != null ? sessionScope.hoTen : 'Người dùng'}</div>
+                <div class="user-role">${sessionScope.vaiTro != null ? sessionScope.vaiTro : ''}</div>
             </div>
         </div>
     </div>
 </header>
+<script>
+    (function () {
+        var a = document.getElementById('headerAvatar');
+        if (a) {
+            var name = (a.getAttribute('data-name') || '').trim();
+            if (name) {
+                var parts = name.split(/\s+/);
+                a.textContent = parts[parts.length - 1].charAt(0).toUpperCase();
+            }
+        }
+    })();
+</script>

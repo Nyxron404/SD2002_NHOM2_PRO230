@@ -33,7 +33,7 @@
         <div class="menu-label">DANH MỤC CHỨC NĂNG</div>
         <ul id="navLinks">
             <!-- UC-1 -->
-            <li><a href="${pageContext.request.contextPath}/views/taiKhoan/quanLyTaiKhoan.jsp"><i class="fas fa-user-shield"></i> <span>Quản lý tài khoản</span></a></li>
+            <li><a href="${pageContext.request.contextPath}/taikhoan"><i class="fas fa-user-shield"></i> <span>Quản lý tài khoản</span></a></li>
             <!-- UC-2 -->
             <li><a href="${pageContext.request.contextPath}/views/trangTrai/quanLyTrangTrai.jsp"><i class="fas fa-map-marked-alt"></i> <span>Quản lý trang trại, khu vực</span></a></li>
             <!-- UC-3 -->
@@ -48,7 +48,7 @@
         <div class="menu-label">HỆ THỐNG</div>
         <ul>
             <!-- UC-0 -->
-            <li><a href="${pageContext.request.contextPath}/dangXuat.jsp"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
+            <li><a href="${pageContext.request.contextPath}/logout" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất?');"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
         </ul>
     </nav>
     <div class="sidebar-footer">
