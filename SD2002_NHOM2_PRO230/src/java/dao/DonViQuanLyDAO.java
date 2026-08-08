@@ -158,4 +158,30 @@ public class DonViQuanLyDAO {
             return false;
         }
     }
+    
+    public java.util.List<DonViQuanLy> getOChua() {
+    java.util.List<DonViQuanLy> list = new java.util.ArrayList<>();
+    String sql = "SELECT * FROM DonViQuanLy "
+               + "WHERE loai_don_vi = N'Ô chứa' AND trang_thai NOT IN (N'Đầy', N'Ngừng sử dụng', N'Bảo trì') "
+               + "ORDER BY ten_don_vi";
+    try (Connection conn = DBConnect.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            DonViQuanLy dv = new DonViQuanLy();
+            dv.setId(rs.getInt("id"));
+            dv.setKhu_vuc_id(rs.getInt("khu_vuc_id"));
+            dv.setLoai_don_vi(rs.getNString("loai_don_vi"));
+            dv.setMa_don_vi(rs.getString("ma_don_vi"));
+            dv.setTen_don_vi(rs.getNString("ten_don_vi"));
+            dv.setDien_tich(rs.getDouble("dien_tich"));
+            dv.setSuc_chua(rs.getDouble("suc_chua"));
+            dv.setTrang_thai(rs.getNString("trang_thai"));
+            list.add(dv);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return list;
+}
 }

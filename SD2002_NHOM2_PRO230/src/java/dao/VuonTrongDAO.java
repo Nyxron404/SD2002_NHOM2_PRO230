@@ -6,28 +6,52 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+
 import models.MatDoThamChieu;
 import models.VuonTrong;
 import url.DBConnect;
 
+/**
+ * UC-4.2 - Thiết lập vườn trồng: gán giống cho lô đất, tính mật độ và phân loại.
+ *
+ * Sửa quan trọng: DonViQuanLy.dien_tich được lưu theo ĐƠN VỊ MÉT VUÔNG
+ * (TrangTraiService kiểm tra diện tích khu vực/trang trại đều bằng m²),
+ * trong khi MatDoThamChieu quy định mật độ theo CÂY/HA. Bản cũ chia thẳng
+ * số cây cho m² nên mật độ nhỏ hơn thực tế 10.000 lần và lô nào cũng bị
+ * gắn cờ "mật độ bất thường".
+ *
+ *      mật độ (cây/ha) = số cây / (diện tích m² / 10000)
+ */
 public class VuonTrongDAO {
+
+    /** 1 hecta = 10.000 m². */
+    public static final double M2_TREN_HA = 10000.0;
+
+    /** Ngưỡng cảnh báo mật độ bất thường (cây/ha). */
+    public static final double MAT_DO_MIN_HOP_LY = 50;
+    public static final double MAT_DO_MAX_HOP_LY = 400;
+
     private final MatDoThamChieuDAO matDoDAO = new MatDoThamChieuDAO();
 
-    public static final double MAT_DO_MIN_HOP_LY = 60.0;
-    public static final double MAT_DO_MAX_HOP_LY = 600.0;
+    // ===================================================================
+    // TÍNH MẬT ĐỘ
+    // ===================================================================
 
-    public static double tinhMatDo(int soCay, double dienTichHa) {
-        if (dienTichHa <= 0) return 0;
-        return soCay / dienTichHa;
+    /** Mật độ cây/ha từ số cây và diện tích tính bằng m². */
+    public static double tinhMatDo(int soCay, double dienTichM2) {
+        if (dienTichM2 <= 0) return 0;
+        double ha = dienTichM2 / M2_TREN_HA;
+        return Math.round(soCay / ha * 100.0) / 100.0;
     }
 
-    /**
-     * Diện tích được lấy từ module Phân chia khu vực.
-     * Không nhận diện tích từ form/request.
-     */
+    public static boolean laBatThuong(double matDo) {
+        return matDo < MAT_DO_MIN_HOP_LY || matDo > MAT_DO_MAX_HOP_LY;
+    }
+
+    /** Diện tích của lô đất, lấy từ DonViQuanLy. Không bao giờ nhận từ form. */
     private Double getDienTichLo(Connection conn, int loDatId) throws Exception {
-        String sql = "SELECT dien_tich FROM DonViQuanLy WHERE id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT dien_tich FROM DonViQuanLy WHERE id = ? AND loai_don_vi = N'Lô đất'")) {
             ps.setInt(1, loDatId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -38,6 +62,23 @@ public class VuonTrongDAO {
         }
         return null;
     }
+
+    /** Dòng tham chiếu mật độ phù hợp; nếu không có dòng nào thì lấy dòng gần nhất. */
+    private int timMatDoThamChieu(Connection conn, double matDo) throws Exception {
+        MatDoThamChieu m = matDoDAO.phanLoai(matDo);
+        if (m != null) return m.getId();
+
+        String sql = "SELECT TOP 1 id FROM MatDoThamChieu ORDER BY ABS(mat_do_tu - ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, matDo);
+            try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return rs.getInt(1); }
+        }
+        return 0;
+    }
+
+    // ===================================================================
+    // ĐỌC
+    // ===================================================================
 
     public List<VuonTrong> getAllWithNames() {
         List<VuonTrong> list = new ArrayList<>();
@@ -50,13 +91,11 @@ public class VuonTrongDAO {
             JOIN DonViQuanLy d ON v.lo_dat_id = d.id
             JOIN GiongSauRieng g ON v.giong_id = g.id
             LEFT JOIN MatDoThamChieu m ON v.mat_do_tham_chieu_id = m.id
-            ORDER BY v.id DESC
+            ORDER BY d.ten_don_vi
             """;
-
         try (Connection c = DBConnect.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
             while (rs.next()) {
                 VuonTrong v = new VuonTrong();
                 v.setId(rs.getInt("id"));
@@ -83,26 +122,38 @@ public class VuonTrongDAO {
         return list;
     }
 
+    public VuonTrong getById(int id) {
+        for (VuonTrong v : getAllWithNames()) if (v.getId() == id) return v;
+        return null;
+    }
+
+    /** Một lô đất chỉ được thiết lập một vườn. */
+    public boolean loDaCoVuon(int loDatId, int excludeId) {
+        String sql = "SELECT COUNT(*) FROM VuonTrong WHERE lo_dat_id = ? AND id <> ?";
+        try (Connection c = DBConnect.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, loDatId);
+            ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return rs.getInt(1) > 0; }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ===================================================================
+    // THÊM / SỬA / XÓA
+    // ===================================================================
+
     public boolean insert(VuonTrong v) {
         try (Connection c = DBConnect.getConnection()) {
             Double area = getDienTichLo(c, v.getLo_dat_id());
+            if (area == null || area <= 0) return false;
 
-            if (area == null || area <= 0) {
-                return false;
-            }
-
-            // Tuyệt đối không lấy diện tích từ request.
             v.setDien_tich(area);
-
             double matDo = tinhMatDo(v.getSo_luong_cay(), area);
-            MatDoThamChieu m = matDoDAO.phanLoai(matDo);
-            int matDoId = m != null ? m.getId() : timMatDoGanNhat(c, matDo);
-
-            if (matDoId <= 0) {
-                return false;
-            }
-
-            boolean batThuong = matDo < MAT_DO_MIN_HOP_LY || matDo > MAT_DO_MAX_HOP_LY;
+            int matDoId = timMatDoThamChieu(c, matDo);
+            if (matDoId <= 0) return false;
 
             String sql = """
                 INSERT INTO VuonTrong
@@ -111,7 +162,6 @@ public class VuonTrongDAO {
                  trang_thai_sinh_truong, co_sau_benh, ghi_chu, ngay_tao)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, GETDATE())
                 """;
-
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setInt(1, v.getLo_dat_id());
                 ps.setInt(2, v.getGiong_id());
@@ -119,15 +169,12 @@ public class VuonTrongDAO {
                 ps.setInt(4, v.getSo_luong_cay());
                 ps.setDouble(5, matDo);
                 ps.setInt(6, matDoId);
-                ps.setBoolean(7, batThuong);
-
-                if (v.getNgay_trong() != null) {
-                    ps.setDate(8, new Date(v.getNgay_trong().getTime()));
-                } else {
-                    ps.setDate(8, new Date(System.currentTimeMillis()));
-                }
-
-                ps.setString(9, "Cây con");
+                ps.setBoolean(7, laBatThuong(matDo));
+                ps.setDate(8, v.getNgay_trong() != null
+                        ? new Date(v.getNgay_trong().getTime())
+                        : new Date(System.currentTimeMillis()));
+                ps.setString(9, v.getTrang_thai_sinh_truong() != null
+                        ? v.getTrang_thai_sinh_truong() : "Cây con");
                 ps.setString(10, v.getGhi_chu());
                 return ps.executeUpdate() > 0;
             }
@@ -137,34 +184,27 @@ public class VuonTrongDAO {
         }
     }
 
+    /**
+     * Cập nhật vườn. Diện tích và mật độ luôn được tính lại từ lô đất,
+     * kể cả khi người dùng đổi sang lô khác.
+     */
     public boolean update(VuonTrong v) {
         try (Connection c = DBConnect.getConnection()) {
             Double area = getDienTichLo(c, v.getLo_dat_id());
-
-            if (area == null || area <= 0) {
-                return false;
-            }
+            if (area == null || area <= 0) return false;
 
             v.setDien_tich(area);
-
             double matDo = tinhMatDo(v.getSo_luong_cay(), area);
-            MatDoThamChieu m = matDoDAO.phanLoai(matDo);
-            int matDoId = m != null ? m.getId() : timMatDoGanNhat(c, matDo);
-
-            if (matDoId <= 0) {
-                return false;
-            }
-
-            boolean batThuong = matDo < MAT_DO_MIN_HOP_LY || matDo > MAT_DO_MAX_HOP_LY;
+            int matDoId = timMatDoThamChieu(c, matDo);
+            if (matDoId <= 0) return false;
 
             String sql = """
                 UPDATE VuonTrong
                 SET lo_dat_id=?, giong_id=?, dien_tich=?, so_luong_cay=?,
-                    mat_do_trong=?, mat_do_tham_chieu_id=?,
-                    mat_do_bat_thuong=?, ghi_chu=?, ngay_cap_nhat=GETDATE()
+                    mat_do_trong=?, mat_do_tham_chieu_id=?, mat_do_bat_thuong=?,
+                    ngay_trong=?, trang_thai_sinh_truong=?, ghi_chu=?, ngay_cap_nhat=GETDATE()
                 WHERE id=?
                 """;
-
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setInt(1, v.getLo_dat_id());
                 ps.setInt(2, v.getGiong_id());
@@ -172,9 +212,14 @@ public class VuonTrongDAO {
                 ps.setInt(4, v.getSo_luong_cay());
                 ps.setDouble(5, matDo);
                 ps.setInt(6, matDoId);
-                ps.setBoolean(7, batThuong);
-                ps.setString(8, v.getGhi_chu());
-                ps.setInt(9, v.getId());
+                ps.setBoolean(7, laBatThuong(matDo));
+                ps.setDate(8, v.getNgay_trong() != null
+                        ? new Date(v.getNgay_trong().getTime())
+                        : new Date(System.currentTimeMillis()));
+                ps.setString(9, v.getTrang_thai_sinh_truong() != null
+                        ? v.getTrang_thai_sinh_truong() : "Cây con");
+                ps.setString(10, v.getGhi_chu());
+                ps.setInt(11, v.getId());
                 return ps.executeUpdate() > 0;
             }
         } catch (Exception e) {
@@ -184,9 +229,8 @@ public class VuonTrongDAO {
     }
 
     public boolean delete(int id) {
-        String sql = "DELETE FROM VuonTrong WHERE id=?";
         try (Connection c = DBConnect.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+             PreparedStatement ps = c.prepareStatement("DELETE FROM VuonTrong WHERE id=?")) {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -195,10 +239,27 @@ public class VuonTrongDAO {
         }
     }
 
-    public boolean capNhatTrangThai(int id, String trangThai) {
-        String sql = "UPDATE VuonTrong SET trang_thai_sinh_truong=?, ngay_cap_nhat=GETDATE() WHERE id=?";
+    /** Số bản ghi đang tham chiếu tới vườn này (chặn xóa nhầm). */
+    public int demRangBuoc(int vuonId) {
+        String sql = "SELECT (SELECT COUNT(*) FROM LichSuSinhTruong WHERE vuon_trong_id=?) "
+                   + "+ (SELECT COUNT(*) FROM GhiNhanSauBenh WHERE vuon_trong_id=?) "
+                   + "+ (SELECT COUNT(*) FROM GhiNhanThuHoach WHERE vuon_trong_id=?)";
         try (Connection c = DBConnect.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, vuonId);
+            ps.setInt(2, vuonId);
+            ps.setInt(3, vuonId);
+            try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return rs.getInt(1); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public boolean capNhatTrangThai(int id, String trangThai) {
+        try (Connection c = DBConnect.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                "UPDATE VuonTrong SET trang_thai_sinh_truong=?, ngay_cap_nhat=GETDATE() WHERE id=?")) {
             ps.setString(1, trangThai);
             ps.setInt(2, id);
             return ps.executeUpdate() > 0;
@@ -206,59 +267,5 @@ public class VuonTrongDAO {
             e.printStackTrace();
             return false;
         }
-    }
-
-    public boolean giamSoCay(int id, int giam) {
-        String sql = """
-            UPDATE VuonTrong
-            SET so_luong_cay =
-                    CASE WHEN so_luong_cay-? < 0 THEN 0
-                         ELSE so_luong_cay-? END,
-                mat_do_trong =
-                    CASE WHEN dien_tich > 0
-                         THEN (CASE WHEN so_luong_cay-? < 0 THEN 0
-                                    ELSE so_luong_cay-? END)/dien_tich
-                         ELSE mat_do_trong END,
-                ngay_cap_nhat=GETDATE()
-            WHERE id=?
-            """;
-        try (Connection c = DBConnect.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, giam);
-            ps.setInt(2, giam);
-            ps.setInt(3, giam);
-            ps.setInt(4, giam);
-            ps.setInt(5, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean capNhatSauBenh(int id, boolean coSauBenh) {
-        String sql = "UPDATE VuonTrong SET co_sau_benh=?, ngay_cap_nhat=GETDATE() WHERE id=?";
-        try (Connection c = DBConnect.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setBoolean(1, coSauBenh);
-            ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private int timMatDoGanNhat(Connection c, double matDo) {
-        String sql = "SELECT TOP 1 id FROM MatDoThamChieu ORDER BY ABS(mat_do_tu-?) ASC";
-        try (PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setDouble(1, matDo);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 }
