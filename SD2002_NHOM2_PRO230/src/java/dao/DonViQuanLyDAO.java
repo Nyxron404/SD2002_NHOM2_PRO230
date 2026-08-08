@@ -12,27 +12,28 @@ import url.DBConnect;
 public class DonViQuanLyDAO {
 
     private DonViQuanLy mapRow(ResultSet rs) throws Exception {
-        return new DonViQuanLy(
-                rs.getInt("id"),
-                rs.getInt("khu_vuc_id"),
-                rs.getNString("loai_don_vi"),
-                rs.getString("ma_don_vi"),
-                rs.getNString("ten_don_vi"),
-                rs.getDouble("dien_tich"),
-                rs.getDouble("suc_chua"),
-                rs.getNString("trang_thai"),
-                rs.getTimestamp("ngay_tao"),
-                rs.getTimestamp("ngay_cap_nhat")
-        );
+        DonViQuanLy dv = new DonViQuanLy();
+        dv.setId(rs.getInt("id"));
+        dv.setKhu_vuc_id(rs.getInt("khu_vuc_id"));
+        dv.setLoai_don_vi(rs.getNString("loai_don_vi"));
+        dv.setMa_don_vi(rs.getString("ma_don_vi"));
+        dv.setTen_don_vi(rs.getNString("ten_don_vi"));
+        dv.setDien_tich(rs.getDouble("dien_tich"));
+        dv.setSuc_chua(rs.getDouble("suc_chua"));
+        dv.setTrang_thai(rs.getString("trang_thai"));
+        dv.setNgay_tao(rs.getTimestamp("ngay_tao"));
+        dv.setNgay_cap_nhat(rs.getTimestamp("ngay_cap_nhat"));
+
+        // Đừng quên kiểm tra file Model xem biến Integer mới thêm vào là gì để set() cho đầy đủ nhé
+        // dv.setThuocTinhMoi(rs.getObject("ten_cot", Integer.class)); 
+        return dv;
     }
 
     public List<DonViQuanLy> getAll() {
         List<DonViQuanLy> list = new ArrayList<>();
         String sql = "SELECT * FROM DonViQuanLy WHERE trang_thai = N'Đang hoạt động' OR trang_thai = 'Active'";
 
-        try (Connection conn = DBConnect.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 list.add(mapRow(rs));
@@ -50,7 +51,9 @@ public class DonViQuanLyDAO {
         try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, khuVucId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,7 +66,9 @@ public class DonViQuanLyDAO {
         try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -78,7 +83,9 @@ public class DonViQuanLyDAO {
             ps.setInt(1, khuVucId);
             ps.setInt(2, excludeId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getDouble("tong");
+                if (rs.next()) {
+                    return rs.getDouble("tong");
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -99,7 +106,9 @@ public class DonViQuanLyDAO {
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
-                    if (keys.next()) return keys.getInt(1);
+                    if (keys.next()) {
+                        return keys.getInt(1);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -129,10 +138,10 @@ public class DonViQuanLyDAO {
     public List<DonViQuanLy> getLoDat() {
         List<DonViQuanLy> list = new ArrayList<>();
         String sql = "SELECT * FROM DonViQuanLy WHERE loai_don_vi LIKE N'%Lô%' ORDER BY id ASC";
-        try (Connection conn = DBConnect.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
+        try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

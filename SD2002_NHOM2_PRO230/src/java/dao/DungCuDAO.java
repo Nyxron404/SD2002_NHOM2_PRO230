@@ -35,7 +35,6 @@ public class DungCuDAO {
         return list;
     }
     
-    // Thêm hàm này để trừ số lượng tồn kho dụng cụ khi báo hao hụt
     public boolean updateHaoHut(int id, double soLuongMat, double chiPhiThietHai, String lyDo) {
         String sql = "UPDATE DungCu SET ton_kho_hien_tai = ton_kho_hien_tai - ?, ngay_cap_nhat = GETDATE() WHERE id = ?";
         
@@ -48,5 +47,43 @@ public class DungCuDAO {
             e.printStackTrace();
         }
         return false;
+    }
+    
+    // Đã cập nhật hàm insert chuẩn
+    public boolean insert(DungCu dc) {
+        String sql = "INSERT INTO DungCu (ma_dung_cu, ten_dung_cu, don_vi_tinh, dien_tich_chiem_dung, vi_tri_luu_tru_id, gia_binh_quan, ton_kho_toi_thieu, ton_kho_hien_tai, trang_thai, ngay_tao) VALUES (?, ?, ?, ?, ?, ?, ?, 0, N'Sẵn sàng', GETDATE())";
+        try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, dc.getMa_dung_cu());
+            ps.setNString(2, dc.getTen_dung_cu());
+            ps.setString(3, dc.getDon_vi_tinh());
+            ps.setDouble(4, dc.getDien_tich_chiem_dung());
+            ps.setInt(5, dc.getVi_tri_luu_tru_id());
+            ps.setDouble(6, dc.getGia_binh_quan());
+            ps.setDouble(7, dc.getTon_kho_toi_thieu());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            return false; 
+        }
+    }
+
+    public boolean update(DungCu dc) {
+        String sql = "UPDATE DungCu SET ten_dung_cu=?, don_vi_tinh=?, gia_binh_quan=?, ton_kho_toi_thieu=?, ngay_cap_nhat=GETDATE() WHERE id=?";
+        try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setNString(1, dc.getTen_dung_cu());
+            ps.setString(2, dc.getDon_vi_tinh());
+            ps.setDouble(3, dc.getGia_binh_quan());
+            ps.setDouble(4, dc.getTon_kho_toi_thieu());
+            ps.setInt(5, dc.getId());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) { e.printStackTrace(); return false; }
+    }
+
+    public boolean delete(int id) {
+        String sql = "DELETE FROM DungCu WHERE id=?";
+        try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) { e.printStackTrace(); return false; }
     }
 }

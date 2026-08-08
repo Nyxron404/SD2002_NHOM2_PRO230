@@ -643,7 +643,7 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-outline" onclick="document.getElementById('materialModal').classList.remove('active')">Hủy</button>
-                        <button type="submit" class="btn btn-primary">Lưu thông tin</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>Lưu thông tin</button>
                     </div>
                 </form>
             </div>

@@ -50,8 +50,6 @@
             .overlay.active {
                 display: block;
             }
-
-            /* DASHBOARD CARDS */
             .dashboard-cards {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -112,8 +110,6 @@
                 color: #1e2a3a;
                 margin: 0;
             }
-
-            /* TABS */
             .tabs {
                 display: flex;
                 gap: 4px;
@@ -165,8 +161,6 @@
                     transform: translateY(0);
                 }
             }
-
-            /* TOOLBAR & BUTTONS */
             .toolbar {
                 display: flex;
                 flex-wrap: wrap;
@@ -202,7 +196,6 @@
                 gap: 12px;
                 flex-wrap: wrap;
             }
-
             .btn {
                 padding: 8px 16px;
                 border: none;
@@ -261,8 +254,6 @@
             .btn-outline-danger:hover {
                 background: #fceceb;
             }
-
-            /* TABLE */
             .table-container {
                 background: #fff;
                 border-radius: 12px;
@@ -319,14 +310,6 @@
                 background: #fadbd8;
                 color: #922b21;
             }
-
-            .details-row-dc td {
-                background-color: #f8faff !important;
-                border-bottom: 2px solid #e9edf4;
-                padding: 0 !important;
-            }
-
-            /* MODALS */
             .modal-overlay {
                 display: none;
                 position: fixed;
@@ -497,7 +480,6 @@
     </head>
     <body>
 
-        <!-- NHÚNG THEO ĐƯỜNG DẪN TUYỆT ĐỐI -->
         <%@ include file="/views/commons/sidebar.jsp" %>
         <div class="overlay" id="overlay"></div>
 
@@ -505,14 +487,12 @@
             <%@ include file="/views/commons/header.jsp" %>
             <script>
                 document.addEventListener("DOMContentLoaded", function () {
-                    var pageTitle = document.getElementById('pageHeaderTitle');
-                    if (pageTitle)
-                        pageTitle.innerHTML = 'Tổng quan Bãi đỗ & Khu lưu trữ <span>| Dashboard</span>';
+                var pageTitle = document.getElementById('pageHeaderTitle');
+                if (pageTitle) pageTitle.innerHTML = 'Tổng quan Bãi đỗ & Khu lưu trữ <span>| Dashboard</span>';
                 });
             </script>
 
             <section class="content">
-
                 <div class="dashboard-cards" id="dashCardsDungCu">
                     <div class="stat-card">
                         <div class="stat-icon primary"><i class="fas fa-toolbox"></i></div>
@@ -541,8 +521,23 @@
                     <div class="stat-card">
                         <div class="stat-icon warning"><i class="fas fa-cogs"></i></div>
                         <div class="stat-details">
-                            <h3>Thiết bị đang bảo trì / Sử dụng</h3>
+                            <h3>Đang bảo trì / Sử dụng</h3>
                             <p id="dashInuseThietBi">0</p>
+                        </div>
+                    </div>
+                    <!-- THÊM 2 CARD NÀY -->
+                    <div class="stat-card">
+                        <div class="stat-icon warning"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="stat-details">
+                            <h3>Sắp đến hạn bảo trì (<= 7 ngày)</h3>
+                            <p id="dashSoonMaintainThietBi">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon danger"><i class="fas fa-times-circle"></i></div>
+                        <div class="stat-details">
+                            <h3>Quá hạn bảo trì</h3>
+                            <p id="dashOverdueMaintainThietBi">0</p>
                         </div>
                     </div>
                 </div>
@@ -591,8 +586,8 @@
                             <input type="text" placeholder="Tìm kiếm thiết bị..." id="searchThietBi" oninput="filterTable('thietbi')">
                         </div>
                         <div class="actions">
-                            <button class="btn btn-primary" id="btnAddThietBi" onclick="alert('Bản demo: Form thêm mới thiết bị.')"><i class="fas fa-plus"></i> Khai báo thiết bị mới</button>
-                            <button class="btn btn-success" id="btnNhapThietBiToolbar" onclick="alert('Chưa làm phần thiết bị nhé!')"><i class="fas fa-file-invoice"></i> Lập phiếu nhập khu</button>
+                            <button class="btn btn-primary" id="btnAddThietBi" onclick="openKhaiBaoThietBiModal()"><i class="fas fa-plus"></i> Khai báo thiết bị mới</button>
+                            <button class="btn btn-success" id="btnNhapThietBiToolbar" onclick="openImportThietBiModal()"><i class="fas fa-file-invoice"></i> Lập phiếu nhập khu</button>
                         </div>
                     </div>
                     <div class="table-container">
@@ -643,9 +638,16 @@
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label>Khu vực lưu trữ mặc định</label>
-                            <select id="kbKhuVucLuuTru">
-                                <option value="3">Khu Dụng cụ (Cất đồ nhỏ)</option>
+                            <select id="kbKhuVucLuuTru" required>
+                                <option value="">-- Chọn khu vực lưu trữ --</option>
+                                <c:forEach items="${listKhuVuc}" var="kv">
+                                    <option value="${kv.id}">${kv.ten_don_vi}</option>
+                                </c:forEach>
                             </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Diện tích chiếm dụng (m²) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="kbDienTichDungCu" step="0.1" min="0" required placeholder="VD: 2.5">
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>Mức tồn kho tối thiểu (Cảnh báo) <span style="color:#e74c3c;">*</span></label>
@@ -656,11 +658,10 @@
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label>Giá bình quân (Để ước tính chi phí hao hụt) <span style="color:#e74c3c;">*</span></label>
-                            <input type="number" id="kbGiaBinhQuan" step="1000" min="0" required placeholder="VD: 55000">
+                            <input type="number" id="kbGiaBinhQuan" min="0" required placeholder="VD: 55000">
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>Ngày tạo</label>
-                            <!-- Ô Ngày tạo tự động lấy giờ hiện tại và Readonly -->
                             <input type="date" id="kbNgayTao" readonly style="background:#e9edf4; cursor:not-allowed;">
                         </div>
                     </div>
@@ -673,6 +674,69 @@
             </div>
         </div>
 
+        <!-- ==================== MODAL SỬA THIẾT BỊ ==================== -->
+        <div class="modal-overlay" id="modalSuaThietBi">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit" style="color: #27ae60;"></i> Cập Nhật Danh Mục Thiết Bị</h2>
+                    <button class="close-modal" onclick="document.getElementById('modalSuaThietBi').classList.remove('active')">&times;</button>
+                </div>
+                <form id="formSuaThietBi">
+                    <input type="hidden" id="suaTbId" value="">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Mã thiết bị (Không thể sửa)</label>
+                            <input type="text" id="suaMaThietBi" readonly style="background:#e9edf4; cursor:not-allowed;">
+                        </div>
+                        <div class="form-group" style="flex: 2;">
+                            <label>Tên thiết bị <span style="color:#e74c3c;">*</span></label>
+                            <input type="text" id="suaTenThietBi" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Diện tích cất trữ (m²) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="suaDienTichTB" step="0.1" min="0" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Khấu hao (năm) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="suaKhauHaoTB" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <!-- Tìm đoạn này trong #modalKhaiBaoThietBi -->
+                        <div class="form-group" style="flex: 1;">
+                            <label>Khu vực lưu trữ<span style="color:#e74c3c;">*</span></label>
+                            <select id="suaViTriTB" required>
+                                <c:forEach items="${listKhuVuc}" var="kv">
+                                    <option value="${kv.id}">${kv.ten_don_vi}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <!-- Dropdown Trạng Thái -->
+                        <div class="form-group" style="flex: 1;">
+                            <label>Trạng thái vận hành <span style="color:#e74c3c;">*</span></label>
+                            <select id="suaTrangThaiTB" required>
+                                <option value="Sẵn sàng">Sẵn sàng</option>
+                                <option value="Đang dùng">Đang dùng</option>
+                                <option value="Bảo trì">Bảo trì</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Dịch mô tả kỹ thuật xuống hàng riêng -->
+                    <div class="form-row">
+                        <div class="form-group" style="width: 100%;">
+                            <label>Mô tả kỹ thuật</label>
+                            <input type="text" id="suaMoTaTB">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalSuaThietBi').classList.remove('active')">Hủy</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Cập nhật thiết bị</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- ==================== MODAL GHI NHẬN HAO HỤT / THANH LÝ ==================== -->
         <div class="modal-overlay" id="modalHaoHutDungCu">
@@ -713,7 +777,6 @@
                         </div>
                     </div>
 
-                    <!-- Bổ sung phần hiện Chi phí thiệt hại -->
                     <div style="margin-top: 10px; text-align: right; font-size: 15px;">
                         Ước tính thiệt hại tài sản: <strong id="hhDcThietHai" style="color: #e74c3c; font-size: 18px;">0</strong> VNĐ
                     </div>
@@ -725,7 +788,6 @@
                 </form>
             </div>
         </div>
-
 
         <!-- ==================== MODAL LẬP PHIẾU NHẬP DỤNG CỤ ==================== -->
         <div class="modal-overlay" id="modalImportDungCu">
@@ -820,8 +882,6 @@
 
                 <div style="padding: 24px;">
                     <div style="display: flex; gap: 20px;">
-
-                        <!-- Cột trái: Thông tin tổng quan -->
                         <div style="flex: 2; background: #f8faff; border: 1px solid #e9edf4; border-radius: 12px; padding: 20px;">
                             <h4 style="margin-bottom: 16px; color: #4a5b6e; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;"><i class="fas fa-info-circle"></i> Thông số chi tiết</h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
@@ -834,45 +894,302 @@
                             </div>
                         </div>
 
-                        <!-- Cột phải: Cụm Thao tác -->
                         <div style="flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center;">
                             <button id="btnDetDcEdit" class="btn btn-outline" style="width: 100%; border-color:#4d90fe; color:#4d90fe; padding: 12px;"><i class="fas fa-edit"></i> Sửa Thông Tin</button>
                             <button id="btnDetDcImport" class="btn btn-success" style="width: 100%; padding: 12px;"><i class="fas fa-arrow-down"></i> Nhập Thêm</button>
                             <button id="btnDetDcHaoHut" class="btn btn-warning" style="width: 100%; padding: 12px; color: #fff;"><i class="fas fa-minus-circle"></i> Ghi Nhận Hao Hụt</button>
-                            <button id="btnDetDcDelete" class="btn btn-outline-danger" style="width: 100%; padding: 12px;"><i class="fas fa-trash"></i> Xóa Dụng Cụ</button>
+                            <button id="btnDetDcDelete" class="btn btn-outline-danger" style="width: 100%; padding: 12px;" onclick="deleteDungCuAction()"><i class="fas fa-trash"></i> Xóa Dụng Cụ</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- ==================== MODAL XEM CHI TIẾT THIẾT BỊ ==================== -->
+        <div class="modal-overlay" id="detailModalTB">
+            <div class="modal" style="max-width: 800px; padding: 0;">
+                <div class="modal-header" style="background: #27ae60; padding: 20px 24px; border-radius: 16px 16px 0 0; margin-bottom: 0;">
+                    <h2 style="color: #fff; font-size: 20px;"><i class="fas fa-tractor" style="margin-right: 10px;"></i> Chi Tiết Thiết Bị: <span id="detTbTitleName"></span></h2>
+                    <button class="close-modal" style="color: #fff;" onclick="document.getElementById('detailModalTB').classList.remove('active')">&times;</button>
+                </div>
+                <div style="padding: 24px;">
+                    <div style="display: flex; gap: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+                            <div><span style="color:#8aa3c0;">Mã TB (Định danh):</span> <strong id="detTbId"></strong></div>
+                            <div><span style="color:#8aa3c0;">Trạng thái:</span> <strong id="detTbStatus"></strong></div>
+                            <div><span style="color:#8aa3c0;">Diện Tích (m²):</span> <strong id="detTbArea"></strong></div>
+                            <div><span style="color:#8aa3c0;">Khấu hao (năm):</span> <strong id="detTbKhauHao"></strong></div>
+                            <div style="grid-column: span 2;"><span style="color:#8aa3c0;">Ngày bảo trì dự kiến:</span> <strong id="detTbNgayBaoTri" style="color:#f39c12;"></strong></div>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+                            <button class="btn btn-outline" style="width: 100%; border-color:#4d90fe; color:#4d90fe; padding: 12px;" onclick="editThietBi()"><i class="fas fa-edit"></i> Sửa Thông Tin</button>
+                            <button id="btnDetTbImport" class="btn btn-success" style="width: 100%; padding: 12px;" onclick="openImportThietBiModalFromDetail()"><i class="fas fa-arrow-down"></i> Nhập Thêm</button>
+                            <button class="btn btn-warning" style="width: 100%; padding: 12px; color: #fff;" onclick="openBaoTriModal()"><i class="fas fa-tools"></i> Lên Lịch Bảo Trì</button>
+                            <button class="btn btn-outline-danger" style="width: 100%; padding: 12px;" onclick="deleteThietBi()"><i class="fas fa-trash"></i> Xóa Thiết Bị</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL LÊN LỊCH BẢO TRÌ ==================== -->
+        <div class="modal-overlay" id="modalBaoTriTB">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-tools" style="color: #f39c12;"></i> Lên Lịch Bảo Trì / Hao Hụt</h2>
+                    <button class="close-modal" onclick="document.getElementById('modalBaoTriTB').classList.remove('active')">&times;</button>
+                </div>
+                <form id="formBaoTriTB">
+                    <input type="hidden" id="btTbId" value="">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Ngày bảo trì dự kiến <span style="color:#e74c3c;">*</span></label>
+                            <input type="date" id="btNgayDuKien" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Loại bảo trì <span style="color:#e74c3c;">*</span></label>
+                            <select id="btLoaiBaoTri" required>
+                                <option value="Định kỳ">Bảo trì định kỳ</option>
+                                <option value="Đột xuất">Sửa chữa đột xuất (Hỏng hóc)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Nội dung bảo trì / Ghi chú <span style="color:#e74c3c;">*</span></label>
+                            <input type="text" id="btNoiDung" required placeholder="VD: Thay dầu máy, thay lốp...">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalBaoTriTB').classList.remove('active')">Hủy</button>
+                        <button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Xác nhận lịch</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL KHAI BÁO THIẾT BỊ (UC-5.4) ==================== -->
+        <div class="modal-overlay" id="modalKhaiBaoThietBi">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-tractor" style="color: #27ae60;"></i>Khai Báo Danh Mục Thiết Bị</h2>
+                    <button class="close-modal" onclick="document.getElementById('modalKhaiBaoThietBi').classList.remove('active')">&times;</button>
+                </div>
+                <form id="formKhaiBaoThietBi">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Mã thiết bị định danh <span style="color:#e74c3c;">*</span></label>
+                            <input type="text" id="kbMaThietBi" required placeholder="VD: TB-MC01">
+                        </div>
+                        <div class="form-group" style="flex: 2;">
+                            <label>Tên thiết bị <span style="color:#e74c3c;">*</span></label>
+                            <input type="text" id="kbTenThietBi" required placeholder="VD: Máy cày Kubota 45HP">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Diện tích cất trữ (m²) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="kbDienTichTB" step="0.1" min="0" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Khấu hao (năm) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="kbKhauHaoTB" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Khu vực lưu trữ<span style="color:#e74c3c;">*</span></label>
+                            <select id="kbViTriTB" required>
+                                <option value="">-- Chọn khu vực lưu trữ --</option>
+                                <c:forEach items="${listKhuVuc}" var="kv">
+                                    <option value="${kv.id}">${kv.ten_don_vi}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Mô tả kỹ thuật</label>
+                            <input type="text" id="kbMoTaTB" placeholder="Công suất, thông số...">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalKhaiBaoThietBi').classList.remove('active')">Hủy</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Lưu thiết bị</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL SỬA DỤNG CỤ ==================== -->
+        <div class="modal-overlay" id="modalSuaDungCu">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit" style="color: #4d90fe;"></i> Cập Nhật Danh Mục Dụng Cụ</h2>
+                    <button class="close-modal" onclick="document.getElementById('modalSuaDungCu').classList.remove('active')">&times;</button>
+                </div>
+                <form id="formSuaDungCu">
+                    <input type="hidden" id="suaDcId" value="">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Tên dụng cụ <span style="color:#e74c3c;">*</span></label>
+                            <input type="text" id="suaTenDungCu" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Đơn vị tính <span style="color:#e74c3c;">*</span></label>
+                            <select id="suaDonViTinh" required>
+                                <option value="Cái">Cái</option>
+                                <option value="Bộ">Bộ</option>
+                                <option value="Bình">Bình</option>
+                                <option value="Chiếc">Chiếc</option>
+                                <option value="Đôi">Đôi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Khu vực lưu trữ mặc định</label>
+                            <select id="suaKhuVucLuuTru" required disabled style="background:#e9edf4; cursor:not-allowed;">
+                                <option value="">-- Chọn khu vực lưu trữ --</option>
+                                <c:forEach items="${listKhuVuc}" var="kv">
+                                    <option value="${kv.id}">${kv.ten_don_vi}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Diện tích chiếm dụng (m²) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="kbDienTichDungCu" step="0.1" min="0" required placeholder="VD: 2.5">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Mức tồn kho tối thiểu (Cảnh báo) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="suaTonKhoToiThieu" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Giá bình quân <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="suaGiaBinhQuan" min="0" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Mã dụng cụ (Không thể sửa)</label>
+                            <input type="text" id="suaMaDungCu" readonly style="background:#e9edf4; cursor:not-allowed;">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalSuaDungCu').classList.remove('active')">Hủy</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật danh mục</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL NHẬP THIẾT BỊ ==================== -->
+        <div class="modal-overlay" id="modalImportThietBi">
+            <div class="modal large">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-invoice" style="color: #27ae60;"></i> Lập Phiếu Nhập Thiết Bị</h2>
+                    <button class="close-modal" onclick="document.getElementById('modalImportThietBi').classList.remove('active')">&times;</button>
+                </div>
+                <form id="formImportThietBi" enctype="multipart/form-data">
+                    <div style="background: #f8faff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e9edf4;">
+                        <h4 style="margin-bottom: 16px; color: #1e2a3a; font-size: 15px;"><i class="fas fa-receipt"></i> Thông tin chứng từ</h4>
+
+                        <div class="form-row">
+                            <div class="form-group"><label>Mã phiếu nhập <span style="color:#e74c3c;">*</span></label><input type="text" id="tbMaHoaDon" required></div>
+                            <div class="form-group"><label>Loại phiếu nhập</label><input type="text" id="tbLoaiPhieu" value="Nhập Thiết Bị" readonly style="background:#e9edf4; cursor:not-allowed; color: #6f8fb0; font-weight: 500;"></div>
+                            <div class="form-group"><label>Số hóa đơn <span style="color:#e74c3c;">*</span></label><input type="text" id="tbSoHoaDon" required></div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group"><label>Mẫu số</label><input type="text" id="tbMauSo"></div>
+                            <div class="form-group"><label>Ký hiệu</label><input type="text" id="tbKyHieu"></div>
+                            <div class="form-group"><label>Ngày hóa đơn <span style="color:#e74c3c;">*</span></label><input type="date" id="tbNgayHoaDon" required></div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nhà cung cấp <span style="color:#e74c3c;">*</span></label>
+                                <select id="tbNhaCungCapId" required onchange="tuDongDienMSTTB()">
+                                    <option value="">-- Chọn Nhà cung cấp --</option>
+                                    <c:forEach items="${listNCC}" var="ncc">
+                                        <option value="${ncc.getId()}" data-mst="${ncc.getMa_so_thue()}">${ncc.getTen_ncc()}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Mã số thuế NCC</label><input type="text" id="tbMST" readonly style="background:#fcfdfe;"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group"><label>Người mua hàng <span style="color:#e74c3c;">*</span></label><input type="text" id="tbNguoiMua" required></div>
+                            <div class="form-group"><label>Người bán hàng</label><input type="text" id="tbNguoiBan"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex:2;">
+                                <label>Upload Bản gốc hóa đơn (Ảnh/PDF) <span style="color:#e74c3c;">*</span></label>
+                                <input type="file" id="tbAnhHoaDon" name="anh_hoa_don" accept=".jpg, .jpeg, .png, .pdf" required style="padding: 6px 10px;">
+                            </div>
+                            <div class="form-group" style="flex:1;"><label>Ghi chú</label><input type="text" id="tbGhiChu" placeholder="Nhập ghi chú phiếu nhập..."></div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-bottom: 12px; font-size: 15px; color: #1e2a3a;"><i class="fas fa-tractor"></i> Chi tiết Thiết bị (Số lượng mặc định = 1)</h4>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Chọn Thiết bị đã khai báo <span style="color:#e74c3c;">*</span></label>
+                            <select id="importTbSelect" required></select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Đơn giá / Nguyên giá (VNĐ) <span style="color:#e74c3c;">*</span></label>
+                            <input type="number" id="importTbPrice" min="0" required oninput="calcTbTotal()">
+                        </div>
+                    </div>
+
+                    <div class="total-summary" style="flex-wrap: wrap;">
+                        <span>Nguyên giá thiết bị: <strong class="amount" id="tbTongTienHang">0</strong> VNĐ</span>
+                        <span style="display: flex; align-items: center;">Thuế GTGT: <input type="number" id="tbTienThueGTGT" value="0" style="width:120px; margin:0 10px; padding:6px; font-weight: 600; text-align: right;" oninput="calcTbTotal()"> VNĐ</span>
+                        <span>Tổng thanh toán: <strong class="amount" style="color:#e74c3c; font-size: 18px;" id="tbTongThanhToan">0</strong> VNĐ</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalImportThietBi').classList.remove('active')">Hủy</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Xác nhận nhập bãi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <script>
-            // SỬ DỤNG DỮ LIỆU ĐỔ TỪ SERVLET CHO DỤNG CỤ
             let dungCuList = [
             <c:forEach items="${listDungCu}" var="dc" varStatus="loop">
             {
             id: ${dc.getId()},
-                    maDungCu: '${dc.getMa_dung_cu()}',
-                    tenDungCu: '${dc.getTen_dung_cu()}',
-                    donViTinh: '${dc.getDon_vi_tinh()}',
-                    dienTichChiemDung: ${dc.getDien_tich_chiem_dung()},
-                    giaBinhQuan: ${dc.getGia_binh_quan()},
-                    tonKhuHienTai: ${dc.getTon_kho_hien_tai()},
-                    tonKhuToiThieu: ${dc.getTon_kho_toi_thieu()},
-                    trangThai: '${dc.getTrang_thai()}'
+                    maDungCu: `${dc.getMa_dung_cu()}`,
+                    tenDungCu: `${dc.getTen_dung_cu()}`,
+                    donViTinh: `${dc.getDon_vi_tinh()}`,
+                    dienTichChiemDung: parseFloat(`${dc.getDien_tich_chiem_dung()}`.replace(',', '.')) || 0,
+                    giaBinhQuan: parseFloat(`${dc.getGia_binh_quan()}`.replace(',', '.')) || 0,
+                    tonKhuHienTai: parseFloat(`${dc.getTon_kho_hien_tai()}`.replace(',', '.')) || 0,
+                    tonKhuToiThieu: parseFloat(`${dc.getTon_kho_toi_thieu()}`.replace(',', '.')) || 0,
+                    trangThai: `${dc.getTrang_thai()}`
             }${!loop.last ? ',' : ''}
             </c:forEach>
             ];
-
             let thietBiList = [
-                {id: 1, maThietBi: 'TB-MC01', tenThietBi: 'Máy cày Kubota 45HP', dienTichChiemDung: 5.5, trangThai: 1, idKhuVuc: 4},
-                {id: 2, maThietBi: 'TB-MC02', tenThietBi: 'Máy bay phun thuốc DJI', dienTichChiemDung: 2.0, trangThai: 2, idKhuVuc: 4},
-                {id: 3, maThietBi: 'TB-B01', tenThietBi: 'Máy bơm công suất lớn', dienTichChiemDung: 1.5, trangThai: 1, idKhuVuc: 4}
+            <c:forEach items="${listThietBi}" var="tb" varStatus="loop">
+            {
+            id: ${tb.getId()},
+                    maThietBi: `${tb.getMa_thiet_bi()}`,
+                    tenThietBi: `${tb.getTen_thiet_bi()}`,
+                    dienTichChiemDung: parseFloat(`${tb.getDien_tich_cat_tru()}`.replace(',', '.')) || 0,
+                    thoiGianKhauHao: parseInt(`${tb.getThoi_gian_khau_hao_nam()}`) || 0,
+                    trangThai: `${tb.getTrang_thai()}`,
+                    idKhuVuc: parseInt(`${tb.getVi_tri_luu_tru_id()}`) || 4,
+                    ngayBaoTriDuKien: '${tb.getNgay_bao_tri_du_kien() != null ? tb.getNgay_bao_tri_du_kien() : ""}'
+            }${!loop.last ? ',' : ''}
+            </c:forEach>
             ];
-
-            // HÀM UPDATE DASHBOARD CARDS
+            
             function updateDashboardStats() {
+                // Thống kê dụng cụ
                 document.getElementById('dashTotalDungCu').textContent = dungCuList.length;
                 let warningDcCount = dungCuList.filter(dc => dc.tonKhuHienTai <= dc.tonKhuToiThieu).length;
                 document.getElementById('dashWarningDungCu').textContent = warningDcCount;
@@ -881,425 +1198,624 @@
                 else
                     document.getElementById('dashWarningDungCu').style.color = '#1e2a3a';
 
-                let readyTbCount = thietBiList.filter(tb => tb.trangThai === 1).length;
-                let inuseTbCount = thietBiList.filter(tb => tb.trangThai !== 1).length;
+                // Thống kê thiết bị sẵn sàng / đang dùng
+                let readyTbCount = thietBiList.filter(tb => tb.trangThai === 'Sẵn sàng' || tb.trangThai === '1').length;
+                let inuseTbCount = thietBiList.filter(tb => tb.trangThai !== 'Sẵn sàng' && tb.trangThai !== '1').length;
+                
                 document.getElementById('dashReadyThietBi').textContent = readyTbCount;
                 document.getElementById('dashInuseThietBi').textContent = inuseTbCount;
+
+                // Thống kê cảnh báo bảo trì (Sắp đến hạn & Quá hạn)
+                let soonMaintainCount = 0;
+                let overdueMaintainCount = 0;
+                const today = new Date(); // Lấy ngày hiện tại của hệ thống
+                today.setHours(0, 0, 0, 0);
+
+                thietBiList.forEach(tb => {
+                    if (tb.ngayBaoTriDuKien && tb.ngayBaoTriDuKien.trim() !== '') {
+                        const maintainDate = new Date(tb.ngayBaoTriDuKien);
+                        maintainDate.setHours(0, 0, 0, 0);
+                        
+                        // Tính số ngày chênh lệch giữa ngày bảo trì và ngày hiện tại
+                        const diffTime = maintainDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                        if (diffDays < 0) {
+                            overdueMaintainCount++; // Đã quá hạn
+                        } else if (diffDays >= 0 && diffDays <= 7) {
+                            soonMaintainCount++; // Sắp tới hạn (trong vòng 7 ngày)
+                        }
+                    }
+                });
+
+                // Cập nhật số liệu ra giao diện Dashboard (nếu bạn đã thêm 2 thẻ card tương ứng ở HTML)
+                const elSoon = document.getElementById('dashSoonMaintainThietBi');
+                const elOverdue = document.getElementById('dashOverdueMaintainThietBi');
+                
+                if (elSoon) elSoon.textContent = soonMaintainCount;
+                if (elOverdue) elOverdue.textContent = overdueMaintainCount;
+                
+                // Đổi màu cảnh báo
+                if (soonMaintainCount > 0 && elSoon) elSoon.style.color = '#f39c12'; // Màu vàng cam
+                if (overdueMaintainCount > 0 && elOverdue) elOverdue.style.color = '#e74c3c'; // Màu đỏ
             }
 
             function switchDashboard(type) {
-                if (type === 'dungcu') {
-                    document.getElementById('dashCardsDungCu').style.display = 'grid';
-                    document.getElementById('dashCardsThietBi').style.display = 'none';
-                } else {
-                    document.getElementById('dashCardsDungCu').style.display = 'none';
-                    document.getElementById('dashCardsThietBi').style.display = 'grid';
-                }
+            if (type === 'dungcu') {
+            document.getElementById('dashCardsDungCu').style.display = 'grid';
+            document.getElementById('dashCardsThietBi').style.display = 'none';
+            } else {
+            document.getElementById('dashCardsDungCu').style.display = 'none';
+            document.getElementById('dashCardsThietBi').style.display = 'grid';
+            }
             }
 
             document.querySelectorAll('.tab-btn').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    document.querySelectorAll('.tab-btn').forEach(function (b) {
-                        b.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                    document.querySelectorAll('.tab-content').forEach(function (tc) {
-                        tc.classList.remove('active');
-                    });
-                    document.getElementById(this.getAttribute('data-tab')).classList.add('active');
-                });
+            btn.addEventListener('click', function () {
+            document.querySelectorAll('.tab-btn').forEach(function (b) {
+            b.classList.remove('active');
             });
-
-            // ==========================================
-            // RENDER BẢNG DỤNG CỤ (CÓ MENU SỔ XUỐNG GIỐNG VẬT TƯ)
-            // ==========================================
+            this.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(function (tc) {
+            tc.classList.remove('active');
+            });
+            document.getElementById(this.getAttribute('data-tab')).classList.add('active');
+            });
+            });
             function renderDungCu() {
-                const tbody = document.getElementById('tbodyDungCu');
-                tbody.innerHTML = '';
-                dungCuList.forEach(function (dc) {
-                    const isLow = dc.tonKhuHienTai <= dc.tonKhuToiThieu;
-                    const statusClass = isLow ? 'maintenance' : 'available';
-                    const statusText = isLow ? 'Dưới định mức' : 'Đảm bảo';
-                    const textColor = isLow ? '#e74c3c' : '#1e2a3a';
-                    const fw = isLow ? '700' : '600';
-
-                    let trHtml = "<tr class='main-row-dc'>";
-                    trHtml += "<td><span style='color:#6f8fb0; font-size:13px;'>" + dc.maDungCu + "</span></td>";
-                    trHtml += "<td><strong style='color:#2c3e50;'>" + dc.tenDungCu + "</strong></td>";
-                    trHtml += "<td>" + dc.donViTinh + "</td>";
-                    trHtml += "<td>" + dc.giaBinhQuan.toLocaleString() + "</td>";
-                    trHtml += "<td><span style='color: " + textColor + "; font-weight: " + fw + "; font-size: 15px;'>" + dc.tonKhuHienTai + "</span></td>";
-                    trHtml += "<td>" + dc.tonKhuToiThieu + "</td>";
-                    trHtml += "<td><span class='badge-status " + statusClass + "'>" + statusText + "</span></td>";
-
-                    // Nút Xem chi tiết kích hoạt Modal
-                    trHtml += "<td style='text-align:center;'>";
-                    trHtml += "<button class='btn btn-primary' style='padding: 6px 12px; font-size: 13px;' onclick='openDetailModalDC(" + dc.id + ")'><i class='fas fa-list'></i> Xem chi tiết</button>";
-                    trHtml += "</td></tr>";
-
-                    const trMain = document.createElement('tr');
-                    trMain.className = 'main-row-dc';
-                    trMain.innerHTML = trHtml;
-                    tbody.appendChild(trMain);
-                });
-                updateDashboardStats();
+            const tbody = document.getElementById('tbodyDungCu');
+            tbody.innerHTML = '';
+            dungCuList.forEach(function (dc) {
+            const isLow = dc.tonKhuHienTai <= dc.tonKhuToiThieu;
+            const statusClass = isLow ? 'maintenance' : 'available';
+            const statusText = isLow ? 'Dưới định mức' : 'Đảm bảo';
+            const textColor = isLow ? '#e74c3c' : '#1e2a3a';
+            const fw = isLow ? '700' : '600';
+            let trHtml = "";
+            trHtml += "<td><span style='color:#6f8fb0; font-size:13px;'>" + dc.maDungCu + "</span></td>";
+            trHtml += "<td><strong style='color:#2c3e50;'>" + dc.tenDungCu + "</strong></td>";
+            trHtml += "<td>" + dc.donViTinh + "</td>";
+            trHtml += "<td>" + dc.giaBinhQuan.toLocaleString() + "</td>";
+            trHtml += "<td><span style='color: " + textColor + "; font-weight: " + fw + "; font-size: 15px;'>" + dc.tonKhuHienTai + "</span></td>";
+            trHtml += "<td>" + dc.tonKhuToiThieu + "</td>";
+            trHtml += "<td><span class='badge-status " + statusClass + "'>" + statusText + "</span></td>";
+            trHtml += "<td style='text-align:center;'>";
+            trHtml += "<button class='btn btn-primary' style='padding: 6px 12px; font-size: 13px;' onclick='openDetailModalDC(" + dc.id + ")'><i class='fas fa-list'></i> Xem chi tiết</button>";
+            trHtml += "</td>";
+            const trMain = document.createElement('tr');
+            trMain.className = 'main-row-dc';
+            trMain.innerHTML = trHtml;
+            tbody.appendChild(trMain);
+            });
+            updateDashboardStats();
             }
 
-            // ===== RENDER BẢNG THIẾT BỊ =====
-            function renderThietBi() {
-                const tbody = document.getElementById('tbodyThietBi');
-                tbody.innerHTML = '';
-                thietBiList.forEach(function (tb) {
-                    let statusClass = tb.trangThai === 1 ? 'available' : 'inuse';
-                    let trHtml = "<tr>";
-                    trHtml += "<td><span style='color:#6f8fb0; font-size:13px;'>" + tb.maThietBi + "</span></td>";
-                    trHtml += "<td><strong style='color:#2c3e50;'>" + tb.tenThietBi + "</strong></td>";
-                    trHtml += "<td>Bãi Thiết bị</td>";
-                    trHtml += "<td>" + tb.dienTichChiemDung + " m²</td>";
-                    trHtml += "<td><span class='badge-status " + statusClass + "'>" + (tb.trangThai === 1 ? "Sẵn sàng" : "Đang dùng") + "</span></td>";
-
-                    trHtml += "<td><div class='actions-cell'>";
-                    trHtml += "<button class='btn-action import btn-nhap-tb' title='Nhập bãi' onclick='alert(\"Chưa làm phần Thiết bị\")'><i class='fas fa-arrow-down'></i></button>";
-                    trHtml += "</div></td></tr>";
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = trHtml;
-                    tbody.appendChild(tr);
-                });
-                updateDashboardStats();
-            }
-
-            // HÀM MỞ MODAL XEM CHI TIẾT DỤNG CỤ
+            window.currentDcId = null;
             function openDetailModalDC(id) {
-                // 1. Tìm thông tin dụng cụ
-                const dc = dungCuList.find(function (item) {
-                    return item.id === id;
-                });
-                if (!dc)
-                    return;
-
-                // 2. Điền thông tin tổng quan vào modal
-                document.getElementById('detDcTitleName').textContent = dc.tenDungCu;
-                document.getElementById('detDcId').textContent = dc.maDungCu;
-                document.getElementById('detDcUnit').textContent = dc.donViTinh;
-                document.getElementById('detDcArea').textContent = dc.dienTichChiemDung;
-                document.getElementById('detDcPrice').textContent = dc.giaBinhQuan.toLocaleString();
-                document.getElementById('detDcStock').textContent = dc.tonKhuHienTai;
-                document.getElementById('detDcMin').textContent = dc.tonKhuToiThieu;
-
-                // 3. Gắn sự kiện cho các nút thao tác
-                document.getElementById('btnDetDcEdit').onclick = function () {
-                    document.getElementById('detailModalDC').classList.remove('active');
-                    alert("Chức năng sửa thông tin đang phát triển!");
-                };
-                document.getElementById('btnDetDcImport').onclick = function () {
-                    document.getElementById('detailModalDC').classList.remove('active');
-                    openImportDungCuModal(dc.id);
-                };
-                document.getElementById('btnDetDcHaoHut').onclick = function () {
-                    document.getElementById('detailModalDC').classList.remove('active');
-                    openHaoHutDungCuModal(dc.id);
-                };
-                document.getElementById('btnDetDcDelete').onclick = function () {
-                    document.getElementById('detailModalDC').classList.remove('active');
-                    alert("Chức năng xóa đang phát triển!");
-                };
-
-                // 4. Hiển thị Modal
-                document.getElementById('detailModalDC').classList.add('active');
+            window.currentDcId = id;
+            const dc = dungCuList.find(function (item) { return item.id === id; });
+            if (!dc) return;
+            document.getElementById('detDcTitleName').textContent = dc.tenDungCu;
+            document.getElementById('detDcId').textContent = dc.maDungCu;
+            document.getElementById('detDcUnit').textContent = dc.donViTinh;
+            document.getElementById('detDcArea').textContent = dc.dienTichChiemDung;
+            document.getElementById('detDcPrice').textContent = dc.giaBinhQuan.toLocaleString();
+            document.getElementById('detDcStock').textContent = dc.tonKhuHienTai;
+            document.getElementById('detDcMin').textContent = dc.tonKhuToiThieu;
+            document.getElementById('btnDetDcEdit').onclick = function () {
+            document.getElementById('detailModalDC').classList.remove('active');
+            document.getElementById('suaDcId').value = dc.id;
+            document.getElementById('suaMaDungCu').value = dc.maDungCu;
+            document.getElementById('suaTenDungCu').value = dc.tenDungCu;
+            document.getElementById('suaDonViTinh').value = dc.donViTinh;
+            document.getElementById('suaTonKhoToiThieu').value = dc.tonKhuToiThieu;
+            document.getElementById('suaGiaBinhQuan').value = dc.giaBinhQuan;
+            document.getElementById('modalSuaDungCu').classList.add('active');
+            };
+            document.getElementById('btnDetDcImport').onclick = function () {
+            document.getElementById('detailModalDC').classList.remove('active');
+            openImportDungCuModal(dc.id);
+            };
+            document.getElementById('btnDetDcHaoHut').onclick = function () {
+            document.getElementById('detailModalDC').classList.remove('active');
+            openHaoHutDungCuModal(dc.id);
+            };
+            document.getElementById('detailModalDC').classList.add('active');
             }
 
-            // ===== LOGIC FORM KHAI BÁO DỤNG CỤ =====
             function openKhaiBaoDungCuModal() {
-                document.getElementById('formKhaiBaoDungCu').reset();
-                // Lấy ngày hiện tại gán vào ô Ngày Tạo
-                document.getElementById('kbNgayTao').value = new Date().toISOString().slice(0, 10);
-                document.getElementById('modalKhaiBaoDungCu').classList.add('active');
+            document.getElementById('formKhaiBaoDungCu').reset();
+            document.getElementById('kbNgayTao').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('modalKhaiBaoDungCu').classList.add('active');
             }
 
             document.getElementById('formKhaiBaoDungCu').addEventListener('submit', function (e) {
-                e.preventDefault();
-                let tenDungCu = document.getElementById('kbTenDungCu').value;
-                let donViTinh = document.getElementById('kbDonViTinh').value;
-                let tonKhoToiThieu = parseFloat(document.getElementById('kbTonKhoToiThieu').value);
-                let giaBinhQuan = parseFloat(document.getElementById('kbGiaBinhQuan').value);
-
-                dungCuList.push({
-                    id: Date.now(),
-                    maDungCu: 'DC' + Date.now().toString().slice(-3),
-                    tenDungCu: tenDungCu,
-                    donViTinh: donViTinh,
-                    dienTichChiemDung: 0,
-                    giaBinhQuan: giaBinhQuan,
-                    tonKhuHienTai: 0,
-                    tonKhuToiThieu: tonKhoToiThieu,
-                    trangThai: 'Đang sử dụng'
-                });
-
-                document.getElementById('modalKhaiBaoDungCu').classList.remove('active');
-                renderDungCu();
-                alert("Khai báo dụng cụ mới thành công! (Dữ liệu tạm)");
+            e.preventDefault();
+            let params = new URLSearchParams();
+            params.append("action", "insertDungCu");
+            params.append("ma_dung_cu", 'DC' + Date.now().toString().slice( - 4));
+            params.append("ten_dung_cu", document.getElementById('kbTenDungCu').value);
+            params.append("don_vi_tinh", document.getElementById('kbDonViTinh').value);
+            params.append("dien_tich_chiem_dung", document.getElementById('kbDienTichDungCu').value);
+            params.append("dien_tich_chiem_dung", 0);
+            params.append("vi_tri_luu_tru_id", document.getElementById('kbKhuVucLuuTru').value);
+            params.append("gia_binh_quan", document.getElementById('kbGiaBinhQuan').value);
+            params.append("ton_kho_toi_thieu", document.getElementById('kbTonKhoToiThieu').value);
+            fetch('tbdc', { method: 'POST', body: params })
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert("Khai báo dụng cụ thành công vào CSDL!");
+                    location.reload();
+                    } else {
+                    alert("Lỗi: " + data.error);
+                    }
+                    });
             });
+            document.getElementById('formSuaDungCu').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let params = new URLSearchParams();
+            params.append("action", "updateDungCu");
+            params.append("id", document.getElementById('suaDcId').value);
+            params.append("ten_dung_cu", document.getElementById('suaTenDungCu').value);
+            params.append("don_vi_tinh", document.getElementById('suaDonViTinh').value);
+            params.append("gia_binh_quan", document.getElementById('suaGiaBinhQuan').value);
+            params.append("ton_kho_toi_thieu", document.getElementById('suaTonKhoToiThieu').value);
+            fetch('tbdc', { method: 'POST', body: params })
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert("Cập nhật danh mục dụng cụ thành công!");
+                    location.reload();
+                    } else {
+                    alert("Lỗi: " + data.error);
+                    }
+                    });
+            });
+            function editThietBi() {
+            const tb = thietBiList.find(item => item.id === window.currentTbId);
+            if (!tb) return;
+            document.getElementById('detailModalTB').classList.remove('active');
+            document.getElementById('suaTbId').value = tb.id;
+            document.getElementById('suaMaThietBi').value = tb.maThietBi;
+            document.getElementById('suaTenThietBi').value = tb.tenThietBi;
+            document.getElementById('suaDienTichTB').value = tb.dienTichChiemDung;
+            document.getElementById('suaKhauHaoTB').value = tb.thoiGianKhauHao;
+            document.getElementById('suaTrangThaiTB').value = tb.trangThai;
+            document.getElementById('suaViTriTB').value = tb.idKhuVuc;
+            document.getElementById('modalSuaThietBi').classList.add('active');
+            }
 
-            // ===== LOGIC FORM NHẬP KHO DỤNG CỤ VỚI FETCH API THỰC TẾ =====
+            document.getElementById('formSuaThietBi').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let params = new URLSearchParams();
+            params.append("action", "updateThietBi");
+            params.append("id", document.getElementById('suaTbId').value);
+            params.append("ma_thiet_bi", document.getElementById('suaMaThietBi').value);
+            params.append("ten_thiet_bi", document.getElementById('suaTenThietBi').value);
+            params.append("dien_tich_cat_tru", document.getElementById('suaDienTichTB').value);
+            params.append("khau_hao", document.getElementById('suaKhauHaoTB').value);
+            params.append("mo_ta", document.getElementById('suaMoTaTB').value);
+            params.append("vi_tri", document.getElementById('suaViTriTB').value);
+            params.append("trang_thai", document.getElementById('suaTrangThaiTB').value);
+            fetch('tbdc', {method: 'POST', body: params})
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert("Cập nhật danh mục thiết bị thành công!");
+                    location.reload();
+                    } else {
+                    alert("Lỗi: " + data.error);
+                    }
+                    });
+            });
             let importDcRows = [];
-
             function addImportDcRow(dungCuId, soLuong, donGia) {
-                importDcRows.push({id: Date.now() + Math.random(), dungCuId: dungCuId, soLuong: soLuong, donGia: donGia});
-                renderImportDcRows();
+            importDcRows.push({id: Date.now() + Math.random(), dungCuId: dungCuId, soLuong: soLuong, donGia: donGia});
+            renderImportDcRows();
             }
-
             function removeImportDcRow(rowId) {
-                importDcRows = importDcRows.filter(function (r) {
-                    return r.id !== rowId;
-                });
-                renderImportDcRows();
+            importDcRows = importDcRows.filter(r => r.id !== rowId);
+            renderImportDcRows();
             }
-
             function renderImportDcRows() {
-                const tbody = document.getElementById('importDungCuBody');
-                tbody.innerHTML = '';
-
-                importDcRows.forEach(function (row) {
-                    let opts = "";
-                    dungCuList.forEach(function (dc) {
-                        let sel = (dc.id === row.dungCuId) ? "selected" : "";
-                        opts += "<option value='" + dc.id + "' " + sel + ">" + dc.tenDungCu + "</option>";
-                    });
-
-                    let trHtml = "<tr>";
-                    trHtml += "<td><select class='import-dc-select' data-rowid='" + row.id + "'>" + opts + "</select></td>";
-                    trHtml += "<td><input type='number' class='import-dc-qty' data-rowid='" + row.id + "' value='" + row.soLuong + "' step='0.01' min='0.01'></td>";
-                    trHtml += "<td><input type='number' class='import-dc-price' data-rowid='" + row.id + "' value='" + row.donGia + "' step='1000' min='0'></td>";
-                    trHtml += "<td><strong class='import-dc-amount' style='color:#2c3e50; font-size:14px;'>" + (row.soLuong * row.donGia).toLocaleString() + "</strong></td>";
-                    trHtml += "<td style='text-align:center;'><button type='button' class='btn-remove-row' onclick='removeImportDcRow(" + row.id + ")'><i class='fas fa-trash-alt'></i></button></td>";
-                    trHtml += "</tr>";
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = trHtml;
-                    tbody.appendChild(tr);
-                });
-
-                document.querySelectorAll('.import-dc-select, .import-dc-qty, .import-dc-price').forEach(function (inp) {
-                    inp.addEventListener('input', function () {
-                        const rowId = parseFloat(this.getAttribute('data-rowid'));
-                        const r = importDcRows.find(function (x) {
-                            return x.id === rowId;
-                        });
-                        if (r) {
-                            if (this.classList.contains('import-dc-select'))
-                                r.dungCuId = parseInt(this.value);
-                            if (this.classList.contains('import-dc-qty'))
-                                r.soLuong = parseFloat(this.value) || 0;
-                            if (this.classList.contains('import-dc-price'))
-                                r.donGia = parseFloat(this.value) || 0;
-                            this.closest('tr').querySelector('.import-dc-amount').textContent = (r.soLuong * r.donGia).toLocaleString();
-                        }
-                        calcDcTotal();
-                    });
-                });
-                calcDcTotal();
+            const tbody = document.getElementById('importDungCuBody');
+            tbody.innerHTML = '';
+            importDcRows.forEach(function (row) {
+            let opts = "";
+            dungCuList.forEach(function (dc) {
+            let sel = (dc.id === row.dungCuId) ? "selected" : "";
+            opts += "<option value='" + dc.id + "' " + sel + ">" + dc.tenDungCu + "</option>";
+            });
+            let trHtml = "<tr>";
+            trHtml += "<td><select class='import-dc-select' data-rowid='" + row.id + "'>" + opts + "</select></td>";
+            trHtml += "<td><input type='number' class='import-dc-qty' data-rowid='" + row.id + "' value='" + row.soLuong + "' step='0.01' min='0.01'></td>";
+            trHtml += "<td><input type='number' class='import-dc-price' data-rowid='" + row.id + "' value='" + row.donGia + "' min='0'></td>";
+            trHtml += "<td><strong class='import-dc-amount' style='color:#2c3e50; font-size:14px;'>" + (row.soLuong * row.donGia).toLocaleString() + "</strong></td>";
+            trHtml += "<td style='text-align:center;'><button type='button' class='btn-remove-row' onclick='removeImportDcRow(" + row.id + ")'><i class='fas fa-trash-alt'></i></button></td>";
+            trHtml += "</tr>";
+            const tr = document.createElement('tr');
+            tr.innerHTML = trHtml;
+            tbody.appendChild(tr);
+            });
+            document.querySelectorAll('.import-dc-select, .import-dc-qty, .import-dc-price').forEach(function (inp) {
+            inp.addEventListener('input', function () {
+            const rowId = parseFloat(this.getAttribute('data-rowid'));
+            const r = importDcRows.find(x => x.id === rowId);
+            if (r) {
+            if (this.classList.contains('import-dc-select')) r.dungCuId = parseInt(this.value);
+            if (this.classList.contains('import-dc-qty')) r.soLuong = parseFloat(this.value) || 0;
+            if (this.classList.contains('import-dc-price')) r.donGia = parseFloat(this.value) || 0;
+            this.closest('tr').querySelector('.import-dc-amount').textContent = (r.soLuong * r.donGia).toLocaleString();
+            }
+            calcDcTotal();
+            });
+            });
+            calcDcTotal();
             }
 
             function calcDcTotal() {
-                let tongHang = 0;
-                importDcRows.forEach(function (row) {
-                    tongHang += (row.soLuong * row.donGia);
-                });
-                const thue = parseFloat(document.getElementById('dcTienThueGTGT').value) || 0;
-
-                document.getElementById('dcTongTienHang').textContent = tongHang.toLocaleString();
-                document.getElementById('dcTongThanhToan').textContent = (tongHang + thue).toLocaleString();
+            let tongHang = 0;
+            importDcRows.forEach(row => tongHang += (row.soLuong * row.donGia));
+            const thue = parseFloat(document.getElementById('dcTienThueGTGT').value) || 0;
+            document.getElementById('dcTongTienHang').textContent = tongHang.toLocaleString();
+            document.getElementById('dcTongThanhToan').textContent = (tongHang + thue).toLocaleString();
             }
 
             document.getElementById('addDcRowBtn').addEventListener('click', function () {
-                if (dungCuList.length === 0) {
-                    alert('Chưa có dụng cụ trong danh mục!');
-                    return;
-                }
-                addImportDcRow(dungCuList[0].id, 1, 0);
+            if (dungCuList.length === 0) { alert('Chưa có dụng cụ trong danh mục!'); return; }
+            addImportDcRow(dungCuList[0].id, 1, 0);
             });
-
             function openImportDungCuModal(id) {
-                importDcRows = [];
-                document.getElementById('formImportDungCu').reset();
-                document.getElementById('dcMaHoaDon').value = 'HD-DC' + Date.now().toString().slice(-5);
-                document.getElementById('dcNgayHoaDon').value = new Date().toISOString().slice(0, 10);
-
-                if (id)
-                    addImportDcRow(id, 1, 0);
-                else if (dungCuList.length > 0)
-                    addImportDcRow(dungCuList[0].id, 1, 0);
-
-                document.getElementById('modalImportDungCu').classList.add('active');
+            importDcRows = [];
+            document.getElementById('formImportDungCu').reset();
+            document.getElementById('dcMaHoaDon').value = 'HD-DC' + Date.now().toString().slice( - 5);
+            document.getElementById('dcNgayHoaDon').value = new Date().toISOString().slice(0, 10);
+            if (id) addImportDcRow(id, 1, 0);
+            else if (dungCuList.length > 0) addImportDcRow(dungCuList[0].id, 1, 0);
+            document.getElementById('modalImportDungCu').classList.add('active');
             }
 
             document.getElementById('btnNhapDungCuToolbar').addEventListener('click', function () {
-                openImportDungCuModal(null);
+            openImportDungCuModal(null);
             });
-
-            // GỬI DỮ LIỆU NHẬP DỤNG CỤ LÊN SERVLET
             document.getElementById('formImportDungCu').addEventListener('submit', function (e) {
-                e.preventDefault();
-                if (importDcRows.length === 0) {
-                    alert("Vui lòng thêm ít nhất một dòng dụng cụ!");
-                    return;
-                }
+            e.preventDefault();
+            if (importDcRows.length === 0) { alert("Vui lòng thêm ít nhất một dòng dụng cụ!"); return; }
 
-                let formData = new FormData();
-                formData.append("action", "insertPhieuNhapDungCu");
-
-                formData.append("ma_phieu_nhap", document.getElementById('dcMaHoaDon').value);
-                formData.append("so_hoa_don", document.getElementById('dcSoHoaDon').value);
-                formData.append("mau_so", document.getElementById('dcMauSo').value);
-                formData.append("ky_hieu", document.getElementById('dcKyHieu').value);
-                formData.append("ngay_hoa_don", document.getElementById('dcNgayHoaDon').value);
-                formData.append("nha_cung_cap_id", document.getElementById('dcNhaCungCapId').value);
-                formData.append("ma_so_thue_ncc", document.getElementById('dcMST').value);
-                formData.append("nguoi_mua_hang", document.getElementById('dcNguoiMua').value);
-                formData.append("nguoi_ban_hang", document.getElementById('dcNguoiBan').value);
-                formData.append("ghi_chu", document.getElementById('dcGhiChu').value);
-
-                let fileAnh = document.getElementById('dcAnhHoaDon').files[0];
-                if (fileAnh)
-                    formData.append("anh_hoa_don", fileAnh);
-
-                formData.append("tong_tien_hang", document.getElementById('dcTongTienHang').innerText.replace(/,/g, ''));
-                formData.append("tien_thue_gtgt", document.getElementById('dcTienThueGTGT').value);
-                formData.append("tong_thanh_toan", document.getElementById('dcTongThanhToan').innerText.replace(/,/g, ''));
-
-                importDcRows.forEach(row => {
-                    formData.append("dung_cu_id[]", row.dungCuId);
-                    formData.append("so_luong[]", row.soLuong);
-                    formData.append("don_gia[]", row.donGia);
-                });
-
-                fetch('tbdc', {
-                    method: 'POST',
-                    body: formData
-                })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert('Lập phiếu nhập dụng cụ thành công!');
-                                document.getElementById('modalImportDungCu').classList.remove('active');
-                                location.reload();
-                            } else {
-                                alert('Lỗi: ' + data.error);
-                            }
-                        })
-                        .catch(err => {
-                            alert('Không gửi được dữ liệu lên máy chủ: ' + err.message);
-                        });
+            let formData = new FormData();
+            formData.append("action", "insertPhieuNhapDungCu");
+            formData.append("ma_phieu_nhap", document.getElementById('dcMaHoaDon').value);
+            formData.append("so_hoa_don", document.getElementById('dcSoHoaDon').value);
+            formData.append("mau_so", document.getElementById('dcMauSo').value);
+            formData.append("ky_hieu", document.getElementById('dcKyHieu').value);
+            formData.append("ngay_hoa_don", document.getElementById('dcNgayHoaDon').value);
+            formData.append("nha_cung_cap_id", document.getElementById('dcNhaCungCapId').value);
+            formData.append("ma_so_thue_ncc", document.getElementById('dcMST').value);
+            formData.append("nguoi_mua_hang", document.getElementById('dcNguoiMua').value);
+            formData.append("nguoi_ban_hang", document.getElementById('dcNguoiBan').value);
+            formData.append("ghi_chu", document.getElementById('dcGhiChu').value);
+            let fileAnh = document.getElementById('dcAnhHoaDon').files[0];
+            if (fileAnh) formData.append("anh_hoa_don", fileAnh);
+            formData.append("tong_tien_hang", document.getElementById('dcTongTienHang').innerText.replace(/[.,]/g, ''));
+            let taxDcVal = document.getElementById('dcTienThueGTGT').value;
+            formData.append("tien_thue_gtgt", taxDcVal ? taxDcVal.replace(/[.,]/g, '') : "0");
+            formData.append("tong_thanh_toan", document.getElementById('dcTongThanhToan').innerText.replace(/[.,]/g, ''));
+            importDcRows.forEach(row => {
+            formData.append("dung_cu_id[]", row.dungCuId);
+            formData.append("so_luong[]", row.soLuong);
+            formData.append("don_gia[]", row.donGia);
             });
-
-            // ===== GHI NHẬN HAO HỤT / THANH LÝ =====
+            fetch('tbdc', { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert('Lập phiếu nhập dụng cụ thành công!');
+                    document.getElementById('modalImportDungCu').classList.remove('active');
+                    location.reload();
+                    } else {
+                    alert('Lỗi: ' + data.error);
+                    }
+                    })
+                    .catch(err => { alert('Không gửi được dữ liệu lên máy chủ: ' + err.message); });
+            });
             function openHaoHutDungCuModal(id) {
-                const dc = dungCuList.find(function (x) {
-                    return x.id === id;
-                });
-                document.getElementById('hhDcId').value = dc.id;
-                document.getElementById('hhDcName').textContent = dc.tenDungCu;
-                document.getElementById('hhDcStock').textContent = dc.tonKhuHienTai + " " + dc.donViTinh;
-
-                document.getElementById('formHaoHutDungCu').reset();
-                document.getElementById('hhDcDate').value = new Date().toISOString().slice(0, 10);
-                document.getElementById('hhDcThietHai').textContent = '0';
-                document.getElementById('modalHaoHutDungCu').classList.add('active');
+            const dc = dungCuList.find(x => x.id === id);
+            document.getElementById('hhDcId').value = dc.id;
+            document.getElementById('hhDcName').textContent = dc.tenDungCu;
+            document.getElementById('hhDcStock').textContent = dc.tonKhuHienTai + " " + dc.donViTinh;
+            document.getElementById('formHaoHutDungCu').reset();
+            document.getElementById('hhDcDate').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('hhDcThietHai').textContent = '0';
+            document.getElementById('modalHaoHutDungCu').classList.add('active');
             }
 
             function calcThietHai() {
-                const id = parseInt(document.getElementById('hhDcId').value);
-                const qty = parseFloat(document.getElementById('hhDcQty').value) || 0;
-                const dc = dungCuList.find(function (x) {
-                    return x.id === id;
-                });
-                if (dc) {
-                    const total = qty * dc.giaBinhQuan;
-                    document.getElementById('hhDcThietHai').textContent = total.toLocaleString();
-                }
+            const id = parseInt(document.getElementById('hhDcId').value);
+            const qty = parseFloat(document.getElementById('hhDcQty').value) || 0;
+            const dc = dungCuList.find(x => x.id === id);
+            if (dc) {
+            const total = qty * dc.giaBinhQuan;
+            document.getElementById('hhDcThietHai').textContent = total.toLocaleString();
+            }
             }
 
             document.getElementById('formHaoHutDungCu').addEventListener('submit', function (e) {
-                e.preventDefault();
-                const id = parseInt(document.getElementById('hhDcId').value);
-                const qty = parseFloat(document.getElementById('hhDcQty').value);
-                const reason = document.getElementById('hhDcReason').value;
-                const dc = dungCuList.find(function (x) {
-                    return x.id === id;
-                });
-                const chiphi = qty * dc.giaBinhQuan;
+            e.preventDefault();
+            const id = parseInt(document.getElementById('hhDcId').value);
+            const qty = parseFloat(document.getElementById('hhDcQty').value);
+            const reason = document.getElementById('hhDcReason').value;
+            const dc = dungCuList.find(x => x.id === id);
+            const chiphi = qty * dc.giaBinhQuan;
+            if (qty > dc.tonKhuHienTai) { alert("Lỗi: Số lượng báo hỏng/mất lớn hơn tồn kho thực tế!"); return; }
 
-                if (qty > dc.tonKhuHienTai) {
-                    alert("Lỗi: Số lượng báo hỏng/mất lớn hơn tồn kho thực tế!");
-                    return;
-                }
-
-                let params = new URLSearchParams();
-                params.append("action", "haoHutDungCu");
-                params.append("id", id);
-                params.append("qty", qty);
-                params.append("chiphi", chiphi);
-                params.append("reason", reason);
-
-                fetch('tbdc', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-                    body: params.toString()
-                })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                document.getElementById('modalHaoHutDungCu').classList.remove('active');
-                                if (dc.tonKhuHienTai - qty < dc.tonKhuToiThieu) {
-                                    alert("Đã ghi nhận hao hụt! CẢNH BÁO: Tồn kho hiện tại đã tụt xuống dưới mức tối thiểu. Vui lòng lên kế hoạch nhập thêm.");
-                                } else {
-                                    alert("Ghi nhận hao hụt / thanh lý dụng cụ thành công!");
-                                }
-                                location.reload();
-                            } else {
-                                alert("Lỗi khi ghi nhận: " + data.error);
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            alert("Lỗi kết nối máy chủ!");
-                        });
+            let params = new URLSearchParams();
+            params.append("action", "haoHutDungCu");
+            params.append("id", id);
+            params.append("qty", qty);
+            params.append("chiphi", chiphi);
+            params.append("reason", reason);
+            fetch('tbdc', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}, body: params.toString() })
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    document.getElementById('modalHaoHutDungCu').classList.remove('active');
+                    if (dc.tonKhuHienTai - qty < dc.tonKhuToiThieu) {
+                    alert("Đã ghi nhận hao hụt! CẢNH BÁO: Tồn kho hiện tại đã tụt xuống dưới mức tối thiểu. Vui lòng lên kế hoạch nhập thêm.");
+                    } else {
+                    alert("Ghi nhận hao hụt / thanh lý dụng cụ thành công!");
+                    }
+                    location.reload();
+                    } else { alert("Lỗi khi ghi nhận: " + data.error); }
+                    });
             });
-
-            // Hàm tự động điền Mã số thuế khi chọn Nhà cung cấp
             function tuDongDienMSTDC() {
-                var selectNCC = document.getElementById("dcNhaCungCapId");
-                var selectedOption = selectNCC.options[selectNCC.selectedIndex];
-                var mst = selectedOption.getAttribute("data-mst");
-                var inputMST = document.getElementById("dcMST");
-                if (inputMST)
-                    inputMST.value = (mst && mst !== 'null') ? mst : "";
+            var selectNCC = document.getElementById("dcNhaCungCapId");
+            var selectedOption = selectNCC.options[selectNCC.selectedIndex];
+            var mst = selectedOption.getAttribute("data-mst");
+            var inputMST = document.getElementById("dcMST");
+            if (inputMST) inputMST.value = (mst && mst !== 'null') ? mst : "";
             }
 
             function filterTable(type) {
-                const keyword = document.getElementById(type === 'dungcu' ? 'searchDungCu' : 'searchThietBi').value.toLowerCase();
-                const rows = document.querySelectorAll(type === 'dungcu' ? '#tbodyDungCu tr.main-row-dc' : '#tbodyThietBi tr');
-
-                rows.forEach(function (row) {
-                    const isMatch = row.textContent.toLowerCase().includes(keyword);
-                    row.style.display = isMatch ? '' : 'none';
-                });
+            const keyword = document.getElementById(type === 'dungcu' ? 'searchDungCu' : 'searchThietBi').value.toLowerCase();
+            const rows = document.querySelectorAll(type === 'dungcu' ? '#tbodyDungCu tr.main-row-dc' : '#tbodyThietBi tr');
+            rows.forEach(function (row) {
+            const isMatch = row.textContent.toLowerCase().includes(keyword);
+            row.style.display = isMatch ? '' : 'none';
+            });
             }
 
-            // Sidebar mobile
             const menuToggle = document.getElementById('menuToggle');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
-            function toggleSidebar() {
-                sidebar.classList.toggle('open');
-                overlay.classList.toggle('active');
-            }
-            if (menuToggle)
-                menuToggle.addEventListener('click', toggleSidebar);
+            function toggleSidebar() { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); }
+            if (menuToggle) menuToggle.addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
+            window.currentTbId = null;
+            function renderThietBi() {
+            const tbody = document.getElementById('tbodyThietBi');
+            tbody.innerHTML = '';
+            thietBiList.forEach(function (tb) {
+            let statusText = tb.trangThai;
+            let statusClass = 'available'; // Mặc định màu xanh
+            if (tb.trangThai === 'Đang dùng') {
+            statusClass = 'inuse'; // Màu cam
+            } else if (tb.trangThai === 'Bảo trì') {
+            statusClass = 'maintenance'; // Màu đỏ
+            }
+            let trHtml = "";
+            trHtml += "<td><span style='color:#6f8fb0; font-size:13px;'>" + tb.maThietBi + "</span></td>";
+            trHtml += "<td><strong style='color:#2c3e50;'>" + tb.tenThietBi + "</strong></td>";
+            trHtml += "<td>Bãi Thiết bị</td>";
+            trHtml += "<td>" + tb.dienTichChiemDung + " m²</td>";
+            trHtml += "<td><span class='badge-status " + statusClass + "'>" + statusText + "</span></td>";
+            trHtml += "<td style='text-align:center;'>";
+            trHtml += "<button class='btn btn-primary' style='padding: 6px 12px; font-size: 13px;' onclick='openDetailModalTB(" + tb.id + ")'><i class='fas fa-list'></i> Xem Chi tiết</button>";
+            trHtml += "</td>";
+            const tr = document.createElement('tr');
+            tr.innerHTML = trHtml;
+            tbody.appendChild(tr);
+            });
+            updateDashboardStats();
+            }
 
-            // INIT
+            function openDetailModalTB(id) {
+            const tb = thietBiList.find(item => item.id === id);
+            if (!tb) return;
+            window.currentTbId = tb.id;
+            let isReady = (tb.trangThai === 'Sẵn sàng' || tb.trangThai === '1');
+            document.getElementById('detTbTitleName').textContent = tb.tenThietBi;
+            document.getElementById('detTbId').textContent = tb.maThietBi;
+            document.getElementById('detTbStatus').textContent = tb.trangThai;
+            document.getElementById('detTbArea').textContent = tb.dienTichChiemDung;
+            document.getElementById('detTbKhauHao').textContent = tb.thoiGianKhauHao;
+            document.getElementById('detTbNgayBaoTri').textContent = tb.ngayBaoTriDuKien ? tb.ngayBaoTriDuKien : 'Chưa có lịch';
+            document.getElementById('detailModalTB').classList.add('active');
+            }
+
+            function openBaoTriModal() {
+            document.getElementById('detailModalTB').classList.remove('active');
+            document.getElementById('btTbId').value = window.currentTbId;
+            document.getElementById('formBaoTriTB').reset();
+            document.getElementById('modalBaoTriTB').classList.add('active');
+            }
+
+            document.getElementById('formBaoTriTB').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let params = new URLSearchParams();
+            params.append("action", "lenLichBaoTri");
+            params.append("ma_thiet_bi", document.getElementById('btTbId').value);
+            params.append("ngay_du_kien", document.getElementById('btNgayDuKien').value);
+            params.append("loai_bao_tri", document.getElementById('btLoaiBaoTri').value);
+            params.append("noi_dung", document.getElementById('btNoiDung').value);
+            fetch('tbdc', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}, body: params.toString() })
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert('Lên lịch bảo trì thành công!');
+                    location.reload();
+                    } else {
+                    alert('Lỗi: ' + data.error);
+                    }
+                    });
+            });
+            function deleteThietBi() {
+            if (confirm("Bạn có chắc chắn muốn xóa thiết bị này không?")) {
+            let params = new URLSearchParams();
+            params.append("action", "deleteThietBi");
+            params.append("id", window.currentTbId);
+            fetch('tbdc', {method: 'POST', body: params}).then(res => location.reload());
+            }
+            }
+
+            function deleteDungCuAction() {
+            if (confirm("Bạn có chắc chắn muốn xóa dụng cụ này không?")) {
+            let params = new URLSearchParams();
+            params.append("action", "deleteDungCu");
+            params.append("id", window.currentDcId);
+            fetch('tbdc', { method: 'POST', body: params })
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert("Xóa dụng cụ thành công!");
+                    location.reload();
+                    } else {
+                    alert("Lỗi: " + (data.error || "Không thể xóa dụng cụ này do đang có dữ liệu liên kết!"));
+                    }
+                    })
+                    .catch(err => {
+                    alert("Lỗi kết nối đến máy chủ!");
+                    });
+            }
+            }
+
+            function openKhaiBaoThietBiModal() {
+            document.getElementById('formKhaiBaoThietBi').reset();
+            document.getElementById('modalKhaiBaoThietBi').classList.add('active');
+            }
+
+            document.getElementById('formKhaiBaoThietBi').addEventListener('submit', function (e) {
+            e.preventDefault();
+            // Kiểm tra xem người dùng đã chọn khu vực lưu trữ hay chưa
+            let viTriVal = document.getElementById('kbViTriTB').value;
+            if (!viTriVal) {
+            alert("Vui lòng chọn khu vực lưu trữ!");
+            return;
+            }
+
+            let params = new URLSearchParams();
+            params.append("action", "insertThietBi");
+            params.append("ma_thiet_bi", document.getElementById('kbMaThietBi').value);
+            params.append("ten_thiet_bi", document.getElementById('kbTenThietBi').value);
+            params.append("dien_tich_cat_tru", document.getElementById('kbDienTichTB').value);
+            params.append("khau_hao", document.getElementById('kbKhauHaoTB').value);
+            params.append("mo_ta", document.getElementById('kbMoTaTB').value);
+            params.append("vi_tri", viTriVal); // Gửi giá trị đã chọn
+            params.append("trang_thai", "Sẵn sàng");
+            fetch('tbdc', {method: 'POST', body: params})
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.success) {
+                    alert("Khai báo danh mục thiết bị thành công!");
+                    location.reload();
+                    } else {
+                    alert("Lỗi: " + data.error);
+                    }
+                    });
+            });
+            /* =================== NHẬP THIẾT BỊ SCRIPT (Cập nhật 1 dòng) =================== */
+
+            function calcTbTotal() {
+            let price = parseFloat(document.getElementById('importTbPrice').value) || 0;
+            let tax = parseFloat(document.getElementById('tbTienThueGTGT').value) || 0;
+            document.getElementById('tbTongTienHang').textContent = price.toLocaleString();
+            document.getElementById('tbTongThanhToan').textContent = (price + tax).toLocaleString();
+            }
+
+            function tuDongDienMSTTB() {
+            var selectNCC = document.getElementById("tbNhaCungCapId");
+            var selectedOption = selectNCC.options[selectNCC.selectedIndex];
+            var mst = selectedOption.getAttribute("data-mst");
+            var inputMST = document.getElementById("tbMST");
+            if (inputMST) inputMST.value = (mst && mst !== 'null') ? mst : "";
+            }
+
+            function openImportThietBiModal() {
+            // Reset form
+            document.getElementById('formImportThietBi').reset();
+            document.getElementById('tbMaHoaDon').value = 'HD-TB' + Date.now().toString().slice( - 5);
+            document.getElementById('tbNgayHoaDon').value = new Date().toISOString().slice(0, 10);
+            const sel = document.getElementById('importTbSelect');
+            if (!sel) {
+            alert('Không tìm thấy dropdown chọn thiết bị!');
+            return;
+            }
+
+            // Xóa sạch option cũ
+            sel.innerHTML = '';
+            // Kiểm tra danh sách thiết bị
+            if (thietBiList.length === 0) {
+            sel.innerHTML = '<option value="">-- Chưa có thiết bị, vui lòng khai báo trước --</option>';
+            alert('Chưa có thiết bị trong danh mục. Hãy khai báo thiết bị trước!');
+            } else {
+            // Dùng createElement để an toàn với tên có dấu
+            thietBiList.forEach(tb => {
+            const option = document.createElement('option');
+            option.value = tb.id;
+            option.textContent = tb.tenThietBi; // Chỉ hiển thị tên
+            sel.appendChild(option);
+            });
+            }
+
+            calcTbTotal();
+            document.getElementById('modalImportThietBi').classList.add('active');
+            }
+
+            document.getElementById('formImportThietBi').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let formData = new FormData();
+            formData.append("action", "insertPhieuNhapThietBi");
+            formData.append("ma_phieu_nhap", document.getElementById('tbMaHoaDon').value);
+            formData.append("so_hoa_don", document.getElementById('tbSoHoaDon').value);
+            formData.append("mau_so", document.getElementById('tbMauSo').value);
+            formData.append("ky_hieu", document.getElementById('tbKyHieu').value);
+            formData.append("ngay_hoa_don", document.getElementById('tbNgayHoaDon').value);
+            formData.append("nha_cung_cap_id", document.getElementById('tbNhaCungCapId').value);
+            formData.append("ma_so_thue_ncc", document.getElementById('tbMST').value);
+            formData.append("nguoi_mua_hang", document.getElementById('tbNguoiMua').value);
+            formData.append("nguoi_ban_hang", document.getElementById('tbNguoiBan').value);
+            formData.append("ghi_chu", document.getElementById('tbGhiChu').value);
+            let fileAnh = document.getElementById('tbAnhHoaDon').files[0];
+            if (fileAnh) formData.append("anh_hoa_don", fileAnh);
+            formData.append("tong_tien_hang", document.getElementById('tbTongTienHang').innerText.replace(/[.,]/g, ''));
+            let taxTbVal = document.getElementById('tbTienThueGTGT').value;
+            formData.append("tien_thue_gtgt", taxTbVal ? taxTbVal.replace(/[.,]/g, '') : "0");
+            formData.append("tong_thanh_toan", document.getElementById('tbTongThanhToan').innerText.replace(/[.,]/g, ''));
+            formData.append("thiet_bi_id", document.getElementById('importTbSelect').value);
+            formData.append("don_gia", document.getElementById('importTbPrice').value);
+            formData.append("khu_thiet_bi_id", "4");
+            fetch('tbdc', {method: 'POST', body: formData}).then(res => res.json()).then(data => {
+            if (data.success) {
+            alert("Đã nhập thiết bị vào bãi đỗ thành công!");
+            location.reload();
+            } else {
+            alert("Lỗi: " + data.error);
+            }
+            });
+            });
+            function openImportThietBiModalFromDetail() {
+            document.getElementById('detailModalTB').classList.remove('active');
+            openImportThietBiModal();
+            setTimeout(() => {
+            let sel = document.getElementById('importTbSelect');
+            if (sel && window.currentTbId) {
+            sel.value = window.currentTbId;
+            }
+            }, 100);
+            }
+
+            // INIT KHI LOAD TRANG
             renderDungCu();
             renderThietBi();
         </script>
