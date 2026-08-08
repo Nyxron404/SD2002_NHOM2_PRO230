@@ -1,7 +1,6 @@
 package controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -23,15 +22,9 @@ import models.GiongSauRieng;
 import models.LichChamSoc;
 import models.LichSuSinhTruong;
 import models.NhatKyChamSoc;
-import models.TaiKhoan;
 import models.VuonTrong;
-
 import service.CanhTacService;
 
-/**
- * UC-4 - Điều phối toàn bộ chức năng Quản lý canh tác sầu riêng.
- * doGet: nạp dữ liệu + forward JSP. doPost: xử lý hành động, trả JSON.
- */
 @WebServlet(name = "CanhTacServlet", urlPatterns = {"/canhtac"})
 public class CanhTacServlet extends HttpServlet {
 
@@ -44,8 +37,8 @@ public class CanhTacServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
         request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html; charset=UTF-8");
 
         request.setAttribute("listGiong", service.getAllGiong());
         request.setAttribute("listMatDo", service.getBangMatDo());
@@ -56,8 +49,9 @@ public class CanhTacServlet extends HttpServlet {
         request.setAttribute("listSauBenh", service.getAllSauBenh());
         request.setAttribute("listThuHoach", service.getAllThuHoach());
 
-        // Danh mục dùng cho dropdown
+        // Lấy các lô đã được phân chia từ module Quản lý khu vực.
         request.setAttribute("listLoDat", donViDAO.getLoDat());
+
         request.setAttribute("listVatTu", vatTuDAO.getAll());
         request.setAttribute("listDungCu", dungCuDAO.getAll());
         request.setAttribute("listThietBi", thietBiDAO.getAll());
@@ -68,109 +62,113 @@ public class CanhTacServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
         request.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json; charset=UTF-8");
-        response.setCharacterEncoding("UTF-8");
-        PrintWriter out = response.getWriter();
 
         String action = request.getParameter("action");
-        int taiKhoanId = layTaiKhoanId(request);
+        String tab = request.getParameter("tab");
+        HttpSession session = request.getSession();
 
         try {
-            String err = null;
-            boolean ok = false;
+            String message;
 
             switch (action == null ? "" : action) {
-                // ===== UC-4.1 Giống =====
-                case "giong_insert": {
-                    err = service.addGiong(docGiong(request));
-                    ok = err == null; break;
-                }
-                case "giong_update": {
-                    GiongSauRieng g = docGiong(request);
-                    g.setId(pInt(request, "id", 0));
-                    err = service.updateGiong(g);
-                    ok = err == null; break;
-                }
-                case "giong_delete": {
-                    err = service.deleteGiong(pInt(request, "id", 0));
-                    ok = err == null; break;
-                }
+                case "giong_insert":
+                    message = service.addGiong(docGiong(request));
+                    session.setAttribute("canhTacMessage",
+                            message == null ? "Thêm giống thành công." : message);
+                    break;
 
-                // ===== UC-4.2 Vườn trồng =====
-                case "vuon_insert": { ok = service.addVuon(docVuon(request)); break; }
-                case "vuon_update": {
-                    VuonTrong v = docVuon(request);
-                    v.setId(pInt(request, "id", 0));
-                    ok = service.updateVuon(v); break;
-                }
-                case "vuon_delete": { ok = service.deleteVuon(pInt(request, "id", 0)); break; }
+                case "giong_delete":
+                    session.setAttribute("canhTacMessage",
+                            service.deleteGiong(pInt(request, "id", 0))
+                                    ? "Xóa giống thành công." : "Không thể xóa giống.");
+                    break;
 
-                // ===== UC-4.3 Lịch chăm sóc =====
-                case "lich_insert": {
+                case "vuon_insert":
+                    // KHÔNG đọc dien_tich từ request.
+                    // VuonTrongDAO tự lấy DonViQuanLy.dien_tich.
+                    session.setAttribute("canhTacMessage",
+                            service.addVuon(docVuon(request))
+                                    ? "Thiết lập vườn thành công. Diện tích và mật độ đã được tính từ lô đất."
+                                    : "Không thể thiết lập vườn. Kiểm tra lô đất có diện tích hợp lệ.");
+                    break;
+
+                case "vuon_delete":
+                    session.setAttribute("canhTacMessage",
+                            service.deleteVuon(pInt(request, "id", 0))
+                                    ? "Xóa thiết lập vườn thành công." : "Không thể xóa thiết lập vườn.");
+                    break;
+
+                case "lich_insert":
                     LichChamSoc l = docLich(request);
-                    l.setNguoi_tao_id(taiKhoanId);
-                    ok = service.addLich(l); break;
-                }
-                case "lich_update": {
-                    LichChamSoc l = docLich(request);
-                    l.setId(pInt(request, "id", 0));
-                    ok = service.updateLich(l); break;
-                }
-                case "lich_delete": { ok = service.deleteLich(pInt(request, "id", 0)); break; }
+                    l.setNguoi_tao_id(0);
+                    session.setAttribute("canhTacMessage",
+                            service.addLich(l) ? "Tạo lịch chăm sóc thành công." : "Không thể tạo lịch.");
+                    break;
 
-                // ===== UC-4.4 Nhật ký chăm sóc =====
-                case "nhatky_insert": {
+                case "lich_delete":
+                    session.setAttribute("canhTacMessage",
+                            service.deleteLich(pInt(request, "id", 0))
+                                    ? "Xóa lịch thành công." : "Không thể xóa lịch.");
+                    break;
+
+                case "nhatky_insert":
                     NhatKyChamSoc n = docNhatKy(request);
-                    n.setNguoi_ghi_nhan_id(taiKhoanId);
-                    err = service.addNhatKy(n);
-                    ok = err == null; break;
-                }
-                case "nhatky_delete": { ok = service.deleteNhatKy(pInt(request, "id", 0)); break; }
+                    n.setNguoi_ghi_nhan_id(0);
+                    String errNhatKy = service.addNhatKy(n);
+                    session.setAttribute("canhTacMessage",
+                            errNhatKy == null ? "Ghi nhật ký thành công. Chi phí vật tư/dụng cụ/thiết bị được tính ở backend."
+                                              : errNhatKy);
+                    break;
 
-                // ===== UC-4.5 Sinh trưởng =====
-                case "sinhtruong_insert": {
-                    LichSuSinhTruong s = docSinhTruong(request);
-                    s.setNguoi_cap_nhat_id(taiKhoanId);
-                    ok = service.addSinhTruong(s); break;
-                }
+                case "nhatky_delete":
+                    session.setAttribute("canhTacMessage",
+                            service.deleteNhatKy(pInt(request, "id", 0))
+                                    ? "Xóa nhật ký thành công." : "Không thể xóa nhật ký.");
+                    break;
 
-                // ===== UC-4.6 Sâu bệnh =====
-                case "saubenh_insert": {
-                    GhiNhanSauBenh s = docSauBenh(request);
-                    s.setNguoi_ghi_nhan_id(taiKhoanId);
-                    err = service.addSauBenh(s);
-                    ok = err == null; break;
-                }
-                case "saubenh_update": {
-                    GhiNhanSauBenh s = docSauBenh(request);
-                    s.setId(pInt(request, "id", 0));
-                    ok = service.updateSauBenh(s); break;
-                }
-                case "saubenh_delete": { ok = service.deleteSauBenh(pInt(request, "id", 0)); break; }
+                case "sinhtruong_insert":
+                    LichSuSinhTruong st = docSinhTruong(request);
+                    st.setNguoi_cap_nhat_id(0);
+                    session.setAttribute("canhTacMessage",
+                            service.addSinhTruong(st) ? "Cập nhật sinh trưởng thành công."
+                                                      : "Không thể cập nhật sinh trưởng.");
+                    break;
 
-                // ===== UC-4.7 Thu hoạch =====
-                case "thuhoach_insert": {
-                    GhiNhanThuHoach t = docThuHoach(request);
-                    t.setNguoi_ghi_nhan_id(taiKhoanId);
-                    boolean hoanTat = "true".equals(request.getParameter("hoan_tat")) || "1".equals(request.getParameter("hoan_tat"));
-                    err = service.addThuHoach(t, hoanTat);
-                    ok = err == null; break;
-                }
-                case "thuhoach_delete": { ok = service.deleteThuHoach(pInt(request, "id", 0)); break; }
+                case "saubenh_insert":
+                    GhiNhanSauBenh sb = docSauBenh(request);
+                    sb.setNguoi_ghi_nhan_id(0);
+                    String errSauBenh = service.addSauBenh(sb);
+                    session.setAttribute("canhTacMessage",
+                            errSauBenh == null ? "Ghi nhận sâu bệnh thành công." : errSauBenh);
+                    break;
+
+                case "thuhoach_insert":
+                    GhiNhanThuHoach th = docThuHoach(request);
+                    th.setNguoi_ghi_nhan_id(0);
+                    boolean hoanTat = "true".equalsIgnoreCase(request.getParameter("hoan_tat"));
+                    String errThu = service.addThuHoach(th, hoanTat);
+                    session.setAttribute("canhTacMessage",
+                            errThu == null ? "Ghi nhận thu hoạch thành công." : errThu);
+                    break;
 
                 default:
-                    err = "Hành động không hợp lệ";
+                    session.setAttribute("canhTacMessage", "Hành động không hợp lệ.");
             }
 
-            out.print(jsonKetQua(ok, err));
         } catch (Exception e) {
             e.printStackTrace();
-            out.print(jsonKetQua(false, e.getMessage()));
+            session.setAttribute("canhTacMessage",
+                    "Lỗi xử lý: " + (e.getMessage() == null ? "Không xác định" : e.getMessage()));
         }
-    }
 
-    // ===================== ĐỌC DỮ LIỆU TỪ REQUEST =====================
+        String redirect = request.getContextPath() + "/canhtac";
+        if (tab != null && !tab.isBlank()) {
+            redirect += "?tab=" + java.net.URLEncoder.encode(tab, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        response.sendRedirect(redirect);
+    }
 
     private GiongSauRieng docGiong(HttpServletRequest r) {
         GiongSauRieng g = new GiongSauRieng();
@@ -178,8 +176,7 @@ public class CanhTacServlet extends HttpServlet {
         g.setDac_diem(r.getParameter("dac_diem"));
         g.setThoi_gian_sinh_truong_thu_hoach(pInt(r, "thoi_gian_sinh_truong_thu_hoach", 0));
         g.setNang_suat_tham_khao(pDouble(r, "nang_suat_tham_khao", 0));
-        String tt = r.getParameter("trang_thai");
-        g.setTrang_thai(tt != null && !tt.isEmpty() ? tt : "Đang canh tác");
+        g.setTrang_thai(valueOr(r.getParameter("trang_thai"), "Đang canh tác"));
         return g;
     }
 
@@ -187,7 +184,8 @@ public class CanhTacServlet extends HttpServlet {
         VuonTrong v = new VuonTrong();
         v.setLo_dat_id(pInt(r, "lo_dat_id", 0));
         v.setGiong_id(pInt(r, "giong_id", 0));
-        v.setDien_tich(pDouble(r, "dien_tich", 0));
+        // Cố ý KHÔNG có v.setDien_tich(...).
+        // Diện tích phải được lấy bởi VuonTrongDAO từ DonViQuanLy.
         v.setSo_luong_cay(pInt(r, "so_luong_cay", 0));
         v.setNgay_trong(parseDate(r.getParameter("ngay_trong")));
         v.setGhi_chu(r.getParameter("ghi_chu"));
@@ -203,9 +201,8 @@ public class CanhTacServlet extends HttpServlet {
         l.setChu_ky_ngay(ck > 0 ? ck : null);
         l.setNgay_ket_thuc(parseDate(r.getParameter("ngay_ket_thuc")));
         l.setMo_ta(r.getParameter("mo_ta"));
-        String tt = r.getParameter("trang_thai");
-        l.setTrang_thai(tt != null && !tt.isEmpty() ? tt : "Đang áp dụng");
-        l.setDanh_sach_lo_id(r.getParameter("lo_ids")); // "1,2,3"
+        l.setTrang_thai(valueOr(r.getParameter("trang_thai"), "Đang áp dụng"));
+        l.setDanh_sach_lo_id(r.getParameter("lo_ids"));
         return l;
     }
 
@@ -221,26 +218,31 @@ public class CanhTacServlet extends HttpServlet {
         if (vtId != null) {
             for (int i = 0; i < vtId.length; i++) {
                 int id = toInt(vtId[i], 0);
-                double q = toDouble(safe(vtQty, i), 0);
-                if (id > 0 && q > 0) n.getDongVatTu().add(new NhatKyChamSoc.DongVatTu(id, q));
+                double qty = toDouble(safe(vtQty, i), 0);
+                if (id > 0 && qty > 0)
+                    n.getDongVatTu().add(new NhatKyChamSoc.DongVatTu(id, qty));
             }
         }
+
         String[] dcId = r.getParameterValues("dc_id");
         String[] dcQty = r.getParameterValues("dc_qty");
         if (dcId != null) {
             for (int i = 0; i < dcId.length; i++) {
                 int id = toInt(dcId[i], 0);
-                double q = toDouble(safe(dcQty, i), 0);
-                if (id > 0 && q > 0) n.getDongDungCu().add(new NhatKyChamSoc.DongDungCu(id, q));
+                double qty = toDouble(safe(dcQty, i), 0);
+                if (id > 0 && qty > 0)
+                    n.getDongDungCu().add(new NhatKyChamSoc.DongDungCu(id, qty));
             }
         }
+
         String[] tbId = r.getParameterValues("tb_id");
         String[] tbNgay = r.getParameterValues("tb_ngay");
         if (tbId != null) {
             for (int i = 0; i < tbId.length; i++) {
                 int id = toInt(tbId[i], 0);
                 int ngay = toInt(safe(tbNgay, i), 1);
-                if (id > 0) n.getDongThietBi().add(new NhatKyChamSoc.DongThietBi(id, ngay));
+                if (id > 0)
+                    n.getDongThietBi().add(new NhatKyChamSoc.DongThietBi(id, Math.max(1, ngay)));
             }
         }
         return n;
@@ -253,9 +255,7 @@ public class CanhTacServlet extends HttpServlet {
         s.setTy_le_giai_doan(r.getParameter("ty_le_giai_doan"));
         int giam = pInt(r, "so_luong_cay_giam", 0);
         s.setSo_luong_cay_giam(giam > 0 ? giam : null);
-        String loai = r.getParameter("loai_cap_nhat");
-        if (loai == null || loai.isEmpty()) loai = giam > 0 ? "Giảm số cây" : "Chuyển giai đoạn";
-        s.setLoai_cap_nhat(loai);
+        s.setLoai_cap_nhat(valueOr(r.getParameter("loai_cap_nhat"), "Chuyển giai đoạn"));
         s.setGhi_chu(r.getParameter("ghi_chu"));
         return s;
     }
@@ -267,18 +267,7 @@ public class CanhTacServlet extends HttpServlet {
         s.setMuc_do_nghiem_trong(r.getParameter("muc_do_nghiem_trong"));
         s.setNgay_phat_hien(parseDate(r.getParameter("ngay_phat_hien")));
         s.setBien_phap_xu_ly(r.getParameter("bien_phap_xu_ly"));
-        String tt = r.getParameter("trang_thai");
-        s.setTrang_thai(tt != null && !tt.isEmpty() ? tt : "Chưa xử lý");
-
-        String[] thId = r.getParameterValues("thuoc_id");
-        String[] thQty = r.getParameterValues("thuoc_qty");
-        if (thId != null) {
-            for (int i = 0; i < thId.length; i++) {
-                int id = toInt(thId[i], 0);
-                double q = toDouble(safe(thQty, i), 0);
-                if (id > 0 && q > 0) s.getDongThuoc().add(new NhatKyChamSoc.DongVatTu(id, q));
-            }
-        }
+        s.setTrang_thai(valueOr(r.getParameter("trang_thai"), "Chưa xử lý"));
         return s;
     }
 
@@ -290,65 +279,44 @@ public class CanhTacServlet extends HttpServlet {
         t.setVi_tri_luu_tru_id(pInt(r, "vi_tri_luu_tru_id", 0));
         t.setTong_san_luong_kg(pDouble(r, "tong_san_luong_kg", 0));
         t.setTong_dien_tich_chiem_dung(pDouble(r, "tong_dien_tich_chiem_dung", 0));
-        String tt = r.getParameter("trang_thai_luu_kho");
-        t.setTrang_thai_luu_kho(tt != null && !tt.isEmpty() ? tt : "Đã nhập kho");
+        t.setTrang_thai_luu_kho(valueOr(r.getParameter("trang_thai_luu_kho"), "Đã nhập kho"));
         t.setGhi_chu(r.getParameter("ghi_chu"));
-
-        String[] loai = r.getParameterValues("pl_loai");
-        String[] sl = r.getParameterValues("pl_sl");
-        String[] dt = r.getParameterValues("pl_dt");
-        if (loai != null) {
-            for (int i = 0; i < loai.length; i++) {
-                if (loai[i] == null || loai[i].trim().isEmpty()) continue;
-                t.getDongPhanLoai().add(new GhiNhanThuHoach.DongPhanLoai(
-                        loai[i].trim(), toDouble(safe(sl, i), 0), toDouble(safe(dt, i), 0)));
-            }
-        }
         return t;
     }
 
-    // ===================== TIỆN ÍCH =====================
-
-    private int layTaiKhoanId(HttpServletRequest r) {
-        HttpSession s = r.getSession(false);
-        if (s != null) {
-            Object tk = s.getAttribute("taiKhoan");
-            if (tk instanceof TaiKhoan) return ((TaiKhoan) tk).getId();
+    private Date parseDate(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            if (s.length() > 10) return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").parse(s);
+            return new SimpleDateFormat("yyyy-MM-dd").parse(s);
+        } catch (Exception e) {
+            return null;
         }
-        int fromForm = pInt(r, "nguoi_ghi_nhan_id", 0);
-        return fromForm > 0 ? fromForm : 1;
     }
 
-    private static String safe(String[] arr, int i) { return (arr != null && i < arr.length) ? arr[i] : null; }
-
-    private static int pInt(HttpServletRequest r, String name, int def) { return toInt(r.getParameter(name), def); }
-    private static double pDouble(HttpServletRequest r, String name, double def) { return toDouble(r.getParameter(name), def); }
-
-    private static int toInt(String s, int def) {
-        try { return (s == null || s.trim().isEmpty()) ? def : Integer.parseInt(s.trim()); }
-        catch (Exception e) { return def; }
+    private int pInt(HttpServletRequest r, String name, int def) {
+        return toInt(r.getParameter(name), def);
     }
-    private static double toDouble(String s, double def) {
-        try { return (s == null || s.trim().isEmpty()) ? def : Double.parseDouble(s.trim()); }
+
+    private double pDouble(HttpServletRequest r, String name, double def) {
+        return toDouble(r.getParameter(name), def);
+    }
+
+    private int toInt(String s, int def) {
+        try { return s == null || s.isBlank() ? def : Integer.parseInt(s); }
         catch (Exception e) { return def; }
     }
 
-    /** Chấp nhận cả yyyy-MM-dd và yyyy-MM-dd'T'HH:mm (datetime-local). */
-    private static Date parseDate(String s) {
-        if (s == null || s.trim().isEmpty()) return null;
-        s = s.trim();
-        String[] patterns = {"yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-dd"};
-        for (String p : patterns) {
-            try { return new SimpleDateFormat(p).parse(s); } catch (Exception ignored) {}
-        }
-        return null;
+    private double toDouble(String s, double def) {
+        try { return s == null || s.isBlank() ? def : Double.parseDouble(s); }
+        catch (Exception e) { return def; }
     }
 
-    private static String jsonKetQua(boolean ok, String err) {
-        String safe = err == null ? "" : err.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ");
-        return "{\"success\":" + ok + ",\"message\":\"" + safe + "\"}";
+    private String safe(String[] a, int i) {
+        return a != null && i < a.length ? a[i] : null;
     }
 
-    @Override
-    public String getServletInfo() { return "UC-4 Quản lý canh tác sầu riêng"; }
+    private String valueOr(String s, String def) {
+        return s == null || s.isBlank() ? def : s;
+    }
 }
