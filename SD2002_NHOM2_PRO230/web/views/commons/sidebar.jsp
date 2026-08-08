@@ -43,7 +43,7 @@
             <!-- UC-5 -->
             <li><a href="${pageContext.request.contextPath}/tbdc"><i class="fas fa-tractor"></i> <span>Quản lý dụng cụ, thiết bị</span></a></li>
             <!-- UC-6 -->
-            <li><a href="${pageContext.request.contextPath}/views/baoCao/baoCao.jsp"><i class="fas fa-chart-pie"></i> <span>Báo cáo và thống kê</span></a></li>
+            <li><a href="${pageContext.request.contextPath}/baocao"><i class="fas fa-chart-pie"></i> <span>Báo cáo và thống kê</span></a></li>
         </ul>
         <div class="menu-label">HỆ THỐNG</div>
         <ul>
