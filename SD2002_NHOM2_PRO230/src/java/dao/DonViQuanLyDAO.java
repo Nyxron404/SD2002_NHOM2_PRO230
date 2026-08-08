@@ -148,6 +148,24 @@ public class DonViQuanLyDAO {
         return list;
     }
 
+
+    /** Danh sách lô đất chưa được thiết lập vườn; dùng cho nút "Thiết lập vườn". */
+    public List<DonViQuanLy> getLoDatChuaCoVuon() {
+        List<DonViQuanLy> list = new ArrayList<>();
+        String sql = "SELECT d.* FROM DonViQuanLy d "
+                   + "WHERE d.loai_don_vi LIKE N'%Lô%' "
+                   + "AND NOT EXISTS (SELECT 1 FROM VuonTrong v WHERE v.lo_dat_id = d.id) "
+                   + "ORDER BY d.id ASC";
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapRow(rs));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public boolean delete(int id) {
         String sql = "DELETE FROM DonViQuanLy WHERE id = ?";
         try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -165,7 +165,7 @@ public class NhatKyChamSocDAO {
             double chiPhiDungCu = 0, dienTichDungCu = 0;
             for (NhatKyChamSoc.DongDungCu dd : n.getDongDungCu()) {
                 if (dd.dungCuId <= 0 || dd.soLuong <= 0) continue;
-                double[] kq = tieuHaoDungCu(conn, newId, dd.dungCuId, dd.soLuong);
+                double[] kq = tieuHaoDungCu(conn, newId, dd.dungCuId, dd.soLuong, dd.soLuongTraVe);
                 chiPhiDungCu   += kq[0];
                 dienTichDungCu += kq[1];
             }
@@ -261,7 +261,7 @@ public class NhatKyChamSocDAO {
             }
 
             // 2) Hoàn tác dụng cụ
-            String sqlDC = "SELECT c.dung_cu_id, c.so_luong_su_dung, d.dien_tich_chiem_dung, d.vi_tri_luu_tru_id "
+            String sqlDC = "SELECT c.dung_cu_id, c.so_luong_tieu_hao, d.dien_tich_chiem_dung, d.vi_tri_luu_tru_id "
                          + "FROM ChiTietDungCuTieuHao c JOIN DungCu d ON c.dung_cu_id = d.id "
                          + "WHERE c.nhat_ky_cham_soc_id = ?";
             List<double[]> dongDC = new ArrayList<>(); // [dungCuId, soLuong, dtcdDonVi, viTri]
@@ -270,7 +270,7 @@ public class NhatKyChamSocDAO {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         dongDC.add(new double[]{
-                                rs.getInt("dung_cu_id"), rs.getDouble("so_luong_su_dung"),
+                                rs.getInt("dung_cu_id"), rs.getDouble("so_luong_tieu_hao"),
                                 rs.getDouble("dien_tich_chiem_dung"), rs.getInt("vi_tri_luu_tru_id")});
                     }
                 }
@@ -412,10 +412,15 @@ public class NhatKyChamSocDAO {
     }
 
     /**
-     * Tiêu hao dụng cụ theo giá bình quân. Trừ tồn DungCu và giải phóng diện tích kho.
-     * @return [chi phí, diện tích giải phóng]
+     * Ghi nhận dụng cụ mang ra sử dụng.
+     *
+     * Dụng cụ là loại có thể trả lại: chỉ phần KHÔNG trả về mới được coi là
+     * tiêu hao, trừ tồn kho và tính chi phí.
+     *
+     * @return [chi phí, diện tích kho được giải phóng]
      */
-    private static double[] tieuHaoDungCu(Connection conn, int nhatKyId, int dungCuId, double soLuong)
+    private static double[] tieuHaoDungCu(Connection conn, int nhatKyId, int dungCuId,
+                                          double soLuong, double soLuongTraVe)
             throws SQLException {
 
         double giaBinhQuan = 0, tonKho = 0, dtcdDonVi = 0;
@@ -434,36 +439,45 @@ public class NhatKyChamSocDAO {
                 viTri       = rs.getInt("vi_tri_luu_tru_id");
             }
         }
+        if (soLuongTraVe < 0 || soLuongTraVe > soLuong) {
+            throw new SQLException("Số lượng trả về của dụng cụ \"" + ten
+                    + "\" không hợp lệ. Phải từ 0 đến số lượng dùng.");
+        }
         if (tonKho < soLuong) {
             throw new SQLException("Dụng cụ \"" + ten + "\" không đủ tồn kho (còn "
                     + lamTron(tonKho) + ", cần " + lamTron(soLuong) + ").");
         }
 
-        double thanhTien = giaBinhQuan * soLuong;
-        double dienTich  = dtcdDonVi * soLuong;
+        double soLuongTieuHao = Math.max(0, soLuong - soLuongTraVe);
+        double thanhTien = giaBinhQuan * soLuongTieuHao;
+        double dienTich  = dtcdDonVi * soLuongTieuHao;
 
         try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO ChiTietDungCuTieuHao (nhat_ky_cham_soc_id, dung_cu_id, so_luong_su_dung, don_gia, thanh_tien) "
-              + "VALUES (?, ?, ?, ?, ?)")) {
+                "INSERT INTO ChiTietDungCuTieuHao "
+              + "(nhat_ky_cham_soc_id, dung_cu_id, so_luong_su_dung, so_luong_tra_ve, so_luong_tieu_hao, don_gia, thanh_tien) "
+              + "VALUES (?, ?, ?, ?, ?, ?, ?)")) {
             ps.setInt(1, nhatKyId);
             ps.setInt(2, dungCuId);
             ps.setDouble(3, lamTron(soLuong));
-            ps.setDouble(4, lamTron(giaBinhQuan));
-            ps.setDouble(5, lamTron(thanhTien));
+            ps.setDouble(4, lamTron(soLuongTraVe));
+            ps.setDouble(5, lamTron(soLuongTieuHao));
+            ps.setDouble(6, lamTron(giaBinhQuan));
+            ps.setDouble(7, lamTron(thanhTien));
             ps.executeUpdate();
         }
 
-        try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE DungCu SET ton_kho_hien_tai = ton_kho_hien_tai - ?, "
-              + "trang_thai = CASE WHEN ton_kho_hien_tai - ? <= ton_kho_toi_thieu THEN 'Sap het' ELSE trang_thai END, "
-              + "ngay_cap_nhat = GETDATE() WHERE id = ?")) {
-            ps.setDouble(1, soLuong);
-            ps.setDouble(2, soLuong);
-            ps.setInt(3, dungCuId);
-            ps.executeUpdate();
+        if (soLuongTieuHao > 0) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE DungCu SET ton_kho_hien_tai = ton_kho_hien_tai - ?, "
+                  + "trang_thai = CASE WHEN ton_kho_hien_tai - ? <= ton_kho_toi_thieu THEN 'Sap het' ELSE trang_thai END, "
+                  + "ngay_cap_nhat = GETDATE() WHERE id = ?")) {
+                ps.setDouble(1, soLuongTieuHao);
+                ps.setDouble(2, soLuongTieuHao);
+                ps.setInt(3, dungCuId);
+                ps.executeUpdate();
+            }
+            capNhatDienTichKhuVuc(conn, viTri, -dienTich);
         }
-
-        capNhatDienTichKhuVuc(conn, viTri, -dienTich);
         return new double[]{thanhTien, dienTich};
     }
 

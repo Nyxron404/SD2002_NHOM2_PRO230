@@ -73,6 +73,7 @@ public class CanhTacServlet extends HttpServlet {
 
         // Lô đất và ô chứa lấy từ module Quản lý khu vực
         request.setAttribute("listLoDat", donViDAO.getLoDat());
+        request.setAttribute("listLoDatChuaCoVuon", donViDAO.getLoDatChuaCoVuon());
         request.setAttribute("listOChua", donViDAO.getOChua());
 
         // Tồn kho KHẢ DỤNG - đã loại lô hết hạn, hết hàng, thiết bị đang bảo trì
@@ -313,7 +314,13 @@ public class CanhTacServlet extends HttpServlet {
             int id = toInt(s, 0);
             if (id <= 0) continue;
             double qty = pDouble(r, "dc_qty_" + id, 0);
-            if (qty > 0) n.getDongDungCu().add(new NhatKyChamSoc.DongDungCu(id, qty));
+            double traVe = pDouble(r, "dc_return_" + id, 0);
+            if (qty > 0) {
+                if (traVe < 0 || traVe > qty) {
+                    throw new IllegalArgumentException("Số lượng trả về của dụng cụ phải từ 0 đến số lượng dùng.");
+                }
+                n.getDongDungCu().add(new NhatKyChamSoc.DongDungCu(id, qty, traVe));
+            }
         }
     }
 

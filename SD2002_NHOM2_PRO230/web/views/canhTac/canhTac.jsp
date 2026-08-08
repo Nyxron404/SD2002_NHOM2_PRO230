@@ -252,7 +252,7 @@ details.box .box-body{padding:20px}
       <tbody>
       <c:forEach var="v" items="${listVuon}">
         <tr data-id="${v.id}" data-lo="${v.lo_dat_id}" data-giong="${v.giong_id}"
-            data-cay="${v.so_luong_cay}" data-gc="${v.ghi_chu}" data-gd="${v.trang_thai_sinh_truong}">
+            data-cay="${v.so_luong_cay}" data-gc="${v.ghi_chu}" data-gd="${v.trang_thai_sinh_truong}" data-loten="${v.ten_lo_dat}" data-dt="${v.dien_tich}">
           <td><b>${v.ten_lo_dat}</b></td>
           <td>${v.ten_giong}</td>
           <td class="num">${v.dien_tich}</td>
@@ -440,7 +440,7 @@ details.box .box-body{padding:20px}
             <table>
               <thead><tr><th style="width:56px">Chọn</th><th>Vật tư</th><th>Loại</th>
                          <th class="num" style="width:150px">Tồn khả dụng</th>
-                         <th style="width:170px">Số lượng dùng</th></tr></thead>
+                         <th style="width:170px">Số lượng dùng</th><th style="width:170px">Số lượng trả về</th></tr></thead>
               <tbody>
               <c:forEach var="vt" items="${listVatTu}">
                 <tr>
@@ -462,11 +462,11 @@ details.box .box-body{padding:20px}
 
         <!-- Dụng cụ -->
         <div class="pick">
-          <div class="pick-head"><i class="fas fa-screwdriver-wrench"></i>Dụng cụ tiêu hao</div>
+          <div class="pick-head"><i class="fas fa-screwdriver-wrench"></i>Dụng cụ sử dụng <span class="dem">Chỉ tính tiêu hao và chi phí phần không trả về.</span></div>
           <div class="pick-scroll">
             <table>
               <thead><tr><th style="width:56px">Chọn</th><th>Dụng cụ</th><th class="num" style="width:150px">Tồn kho</th>
-                         <th style="width:170px">Số lượng dùng</th></tr></thead>
+                         <th style="width:170px">Số lượng dùng</th><th style="width:170px">Số lượng trả về</th></tr></thead>
               <tbody>
               <c:forEach var="dc" items="${listDungCu}">
                 <tr>
@@ -476,9 +476,11 @@ details.box .box-body{padding:20px}
                   <td><input name="dc_qty_${dc.id}" id="dc_qty_${dc.id}" type="number" step="0.01" min="0"
                              max="${dc.ton_kha_dung}" value="0" class="sl" data-ck="${dc.id}" data-nhom="dc"
                              data-max="${dc.ton_kha_dung}" data-ten="${dc.ten}"></td>
-                </tr>
+                   <td><input name="dc_return_${dc.id}" id="dc_return_${dc.id}" type="number" step="0.01" min="0"
+                             max="0" value="0" class="sl dc-return" data-use="dc_qty_${dc.id}" data-ten="${dc.ten}"></td>
+                 </tr>
               </c:forEach>
-              <c:if test="${empty listDungCu}"><tr><td colspan="4" class="trong">Kho không còn dụng cụ.</td></tr></c:if>
+              <c:if test="${empty listDungCu}"><tr><td colspan="5" class="trong">Kho không còn dụng cụ.</td></tr></c:if>
               </tbody>
             </table>
           </div>
@@ -829,10 +831,11 @@ details.box .box-body{padding:20px}
           <div class="fld"><label>Lô đất <span class="sao">*</span></label>
             <select name="lo_dat_id" id="vLo" required onchange="tinhMatDo()">
               <option value="" data-dt="0">-- Chọn lô đất --</option>
-              <c:forEach var="lo" items="${listLoDat}">
+              <c:forEach var="lo" items="${listLoDatChuaCoVuon}">
                 <option value="${lo.id}" data-dt="${lo.dien_tich}">${lo.ten_don_vi} - ${lo.dien_tich} m²</option>
               </c:forEach>
-            </select></div>
+            </select>
+            <div class="hint">Chỉ hiển thị các lô chưa thiết lập vườn.</div></div>
           <div class="fld"><label>Giống <span class="sao">*</span></label>
             <select name="giong_id" id="vGiong" required><option value="">-- Chọn giống --</option>
               <c:forEach var="g" items="${listGiong}"><option value="${g.id}">${g.ten_giong}</option></c:forEach>
@@ -1124,7 +1127,8 @@ function moThemVuon(){
   document.getElementById('mdVuonTitle').textContent='Thiết lập vườn mới';
   document.getElementById('vAction').value='vuon_insert';
   document.getElementById('vId').value='';
-  document.getElementById('vLo').selectedIndex=0;
+  var lo=document.getElementById('vLo');
+  lo.value='';
   document.getElementById('vGiong').selectedIndex=0;
   document.getElementById('vCay').value='';
   document.getElementById('vNgay').value='';
@@ -1137,7 +1141,18 @@ function moSuaVuon(btn){
   document.getElementById('mdVuonTitle').textContent='Sửa thiết lập vườn';
   document.getElementById('vAction').value='vuon_update';
   document.getElementById('vId').value=d(btn,'id');
-  document.getElementById('vLo').value=d(btn,'lo');
+
+  var lo=document.getElementById('vLo');
+  var currentId=d(btn,'lo');
+  var currentOpt=Array.from(lo.options).find(function(o){ return o.value===currentId; });
+  if(!currentOpt){
+    currentOpt=document.createElement('option');
+    currentOpt.value=currentId;
+    currentOpt.textContent=d(btn,'loten')+' - '+d(btn,'dt')+' m² (lô hiện tại)';
+    currentOpt.setAttribute('data-dt',d(btn,'dt')||'0');
+    lo.appendChild(currentOpt);
+  }
+  lo.value=currentId;
   document.getElementById('vGiong').value=d(btn,'giong');
   document.getElementById('vCay').value=d(btn,'cay');
   document.getElementById('vGC').value=d(btn,'gc');
@@ -1268,6 +1283,33 @@ function moSinhTruong(btn){
   }
   if(tbody.children.length===0) themDongGiaiDoan();
   moModal('mdST');
+}
+
+/* =============== Kiểm tra dụng cụ trả về =============== */
+document.querySelectorAll('.dc-return').forEach(function(input){
+  input.addEventListener('input', function(){
+    var use=document.getElementById(this.dataset.use);
+    var max=parseFloat(use ? use.value : 0) || 0;
+    this.max=max;
+    var val=parseFloat(this.value) || 0;
+    if(val>max) this.value=max;
+  });
+});
+var formNhatKy=document.getElementById('formNhatKy');
+if(formNhatKy){
+  formNhatKy.addEventListener('submit', function(e){
+    var loi='';
+    document.querySelectorAll('.dc-return').forEach(function(ret){
+      if(loi) return;
+      var use=document.getElementById(ret.dataset.use);
+      var soDung=parseFloat(use ? use.value : 0) || 0;
+      var tra=parseFloat(ret.value) || 0;
+      if(tra<0 || tra>soDung){
+        loi='Số lượng trả về của dụng cụ "'+(ret.dataset.ten||'')+'" không được lớn hơn số lượng dùng.';
+      }
+    });
+    if(loi){ e.preventDefault(); alert(loi); }
+  });
 }
 
 /* =============== UC-4.6 Sâu bệnh =============== */

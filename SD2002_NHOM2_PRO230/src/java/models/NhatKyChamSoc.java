@@ -42,12 +42,17 @@ public class NhatKyChamSoc {
         public DongVatTu(int vatTuId, double soLuong) { this.vatTuId = vatTuId; this.soLuong = soLuong; }
     }
 
-    /** Một dòng dụng cụ tiêu hao. */
+    /** Một dòng dụng cụ: số lượng mang ra dùng và số lượng trả về. */
     public static class DongDungCu {
         public int dungCuId;
         public double soLuong;
+        public double soLuongTraVe;
         public DongDungCu() {}
-        public DongDungCu(int dungCuId, double soLuong) { this.dungCuId = dungCuId; this.soLuong = soLuong; }
+        public DongDungCu(int dungCuId, double soLuong, double soLuongTraVe) {
+            this.dungCuId = dungCuId;
+            this.soLuong = soLuong;
+            this.soLuongTraVe = soLuongTraVe;
+        }
     }
 
     /** Một dòng thiết bị sử dụng (tính khấu hao theo số ngày). */
